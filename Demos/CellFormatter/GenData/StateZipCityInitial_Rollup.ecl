@@ -1,4 +1,4 @@
-import $;
+IMPORT $;
 
 $.StateZipCityInitial_Layout PrimeStats($.Layout_Person L) := TRANSFORM
   SELF.stat := 1;
@@ -13,4 +13,4 @@ $.StateZipCityInitial_Layout calcStat($.StateZipCityInitial_Layout L, $.StateZip
   SELF := L;
 END;
 
-export StateZipCityInitial_Rollup := ROLLUP(SortedTable, calcStat(LEFT,RIGHT), state, zip, city, middleinitial); 
+EXPORT StateZipCityInitial_Rollup := ROLLUP(SortedTable, calcStat(LEFT,RIGHT), state, zip, city, middleinitial); 

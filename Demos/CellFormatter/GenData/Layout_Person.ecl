@@ -1,4 +1,4 @@
-export Layout_Person := RECORD
+EXPORT Layout_Person := RECORD
   UNSIGNED3 PersonID;
   QSTRING15 FirstName;
   QSTRING25 LastName;

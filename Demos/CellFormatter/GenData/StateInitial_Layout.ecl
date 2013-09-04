@@ -1,5 +1,5 @@
-export StateInitial_Layout := RECORD
-  string2 state;
-  string1 middleinitial;
+EXPORT StateInitial_Layout := RECORD
+  STRING2 state;
+  STRING1 middleinitial;
   INTEGER4 stat;
 END;

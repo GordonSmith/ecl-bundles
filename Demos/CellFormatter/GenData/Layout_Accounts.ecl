@@ -1,4 +1,4 @@
-export Layout_Accounts := RECORD
+EXPORT Layout_Accounts := RECORD
   QSTRING20 Account;
   QSTRING8  OpenDate;
   STRING2   IndustryCode;

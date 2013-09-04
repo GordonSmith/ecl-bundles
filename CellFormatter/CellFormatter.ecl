@@ -322,7 +322,7 @@ EXPORT CellFormatter := MODULE, FORWARD
          *                          dataset.  
          *    @param valueField     The "Value" column within the nested dataset.  
          ***************************************************************************/
-        EXPORT Tree(string dataCol, string labelField, string childrenField, string valueField) := MODULE
+        EXPORT Tree(STRING dataCol, STRING labelField, STRING childrenField, STRING valueField) := MODULE
             SHARED prefix := 'var __sourceData=lang.clone(__row.' + dataCol + ');var getLabel=function(e){return e.' + labelField + '};var getChildren=function(e){return e.' + childrenField + '};var getValue=function(e){return+e.' + valueField + '};' +
                 'require(["d3/d3.v3.min.js"],function () {';
             SHARED postfix := '});';
@@ -390,7 +390,7 @@ EXPORT CellFormatter := MODULE, FORWARD
                 HTML.TableRow(HTML.TableHeader('Column 1') + HTML.TableHeader('Column 2')) +
                 HTML.TableRow(HTML.TableCell('Cell 1, 1') + HTML.TableCell('cell 1, 2')) + 
                 HTML.TableRow(HTML.TableCell('Cell 2, 1') + HTML.TableCell('cell 2, 2')) 
-            , true)}
+            , TRUE)}
         ], htmlRecord);
         EXPORT HTMLTest := htmlDataset;
 
@@ -408,7 +408,7 @@ EXPORT CellFormatter := MODULE, FORWARD
         //  Chart
         chartRecord := RECORD
             STRING Label;
-            Integer4 Value;
+            INTEGER4 Value;
         END;
         sampleRecord := RECORD
             DATASET(chartRecord) sourceData;
@@ -434,23 +434,23 @@ EXPORT CellFormatter := MODULE, FORWARD
         EXPORT ChartTest := sampleDataset;
         
         //  MultipleValueChart
-        MultipleValueChartRecord := record
-            varstring labelX;
-            integer economy_mpg;
-            integer cylinders;
-            integer displacement_cc;
-            integer power_hp;
-            integer weight_lb;
-            integer _0_60_mph_s;
-            integer year;
-        end;
-        sampleRecord := record
+        MultipleValueChartRecord := RECORD
+            VARSTRING labelX;
+            INTEGER economy_mpg;
+            INTEGER cylinders;
+            INTEGER displacement_cc;
+            INTEGER power_hp;
+            INTEGER weight_lb;
+            INTEGER _0_60_mph_s;
+            INTEGER year;
+        END;
+        sampleRecord := RECORD
             dataset(MultipleValueChartRecord) sourceData;
-            varstring pc__javascript;
-        end;
+            VARSTRING pc__javascript;
+        END;
         sampleMultipleValueChart := JavaScript.MultipleValueChart('sourcedata', 'labelx');
         
-        sampleDataset := dataset([{[
+        sampleDataset := DATASET([{[
             {'Ford Maverick', 15, 6, 250, 72, 3158, 19, 75}, 
             {'Ford Maverick', 18, 6, 250, 88, 3021, 16, 73}, 
             {'Ford Maverick', 21, 6, 200, 0, 2875, 17, 74}, 
@@ -458,12 +458,12 @@ EXPORT CellFormatter := MODULE, FORWARD
             {'Ford Maverick', 24, 6, 200, 81, 3012, 17, 76}
             ], sampleMultipleValueChart.ParallelCoordinates}], sampleRecord);
             
-        export MultipleValueChartTest := sampleDataset;                
+        EXPORT MultipleValueChartTest := sampleDataset;                
 
         //  Tree
         leafRecord := RECORD
             STRING label;
-            Integer4 value;
+            INTEGER4 value;
         END;
         parentRecord := RECORD
             STRING label;
