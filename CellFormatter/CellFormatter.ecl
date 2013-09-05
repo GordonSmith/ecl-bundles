@@ -1,4 +1,4 @@
-EXPORT CellFormatter := MODULE, FORWARD
+﻿EXPORT CellFormatter := MODULE, FORWARD
     IMPORT Std;
 
     /***************************************************************************
@@ -115,7 +115,7 @@ EXPORT CellFormatter := MODULE, FORWARD
             RETURN Element(innerText, 'code');
         END; 
         //  <kbd>   Defines keyboard text 
-        EXPORT KeyboartdText(ANY innerText) := FUNCTION
+        EXPORT KeyboardText(ANY innerText) := FUNCTION
             RETURN Element(innerText, 'kbd');
         END; 
         //  <samp>  Defines sample computer code
@@ -228,7 +228,7 @@ EXPORT CellFormatter := MODULE, FORWARD
          *
          *  @see  <a href="http://www.w3schools.com/css/default.asp">CSS Styles</a>
          ***************************************************************************/
-        EXPORT STRING setInnerText(STRING innerText) := FUNCTION
+        EXPORT setInnerText(ANY innerText) := FUNCTION
             RETURN '__cell.innerHTML = entities.encode("' + innerText + '");'; 
         END;
 
@@ -237,7 +237,7 @@ EXPORT CellFormatter := MODULE, FORWARD
          *
          *  @see  <a href="http://www.w3schools.com/css/default.asp">CSS Styles</a>
          ***************************************************************************/
-        EXPORT STRING setCellStyle(STRING style, STRING value) := FUNCTION
+        EXPORT setCellStyle(STRING style, STRING value) := FUNCTION
             RETURN 
                 'require(["dojo/dom-style"], function(domStyle) {' +
                 '    domStyle.set(__cell, "' + style + '", "' + value + '");' + 
@@ -247,7 +247,7 @@ EXPORT CellFormatter := MODULE, FORWARD
         /***************************************************************************
          *  Sets the background and foreground color of the cell.
          ***************************************************************************/
-        EXPORT STRING colorCell(ANY innerText, STRING backgroundColor = '', STRING color = '') := FUNCTION
+        EXPORT colorCell(ANY innerText, STRING backgroundColor = '', STRING color = '') := FUNCTION
             RETURN 
                 setCellStyle('backgroundColor', backgroundColor) + 
                 setCellStyle('color', color) +
@@ -344,7 +344,7 @@ EXPORT CellFormatter := MODULE, FORWARD
         /***************************************************************************
          *  Formats various "Graph" Structures.  Requires two nested datasets   
          *  "vertices" and "edges".  
-         *  The verices dataset should contain a label and group (category) column.
+         *  The vertices dataset should contain a label and group (category) column.
          *  The edges dataset should contain source, target and weight fields.
          *
          *  Graph Types:
@@ -378,7 +378,7 @@ EXPORT CellFormatter := MODULE, FORWARD
     EXPORT __selfTest := MODULE
         //  HTML
         htmlRecord := RECORD
-            STRING Example__html;
+            UNICODE Example__html;
         END;
         htmlDataset := DATASET([
             {HTML.Bold('Bold Text')},
@@ -389,19 +389,19 @@ EXPORT CellFormatter := MODULE, FORWARD
             {HTML.Table(
                 HTML.TableRow(HTML.TableHeader('Column 1') + HTML.TableHeader('Column 2')) +
                 HTML.TableRow(HTML.TableCell('Cell 1, 1') + HTML.TableCell('cell 1, 2')) + 
-                HTML.TableRow(HTML.TableCell('Cell 2, 1') + HTML.TableCell('cell 2, 2')) 
+                HTML.TableRow(HTML.TableCell('Cell 2, 1') + HTML.TableCell(u'Unicode Text:非常によい編集者であ非る非常によい編集者である非常によい編集者である'))
             , TRUE)}
         ], htmlRecord);
         EXPORT HTMLTest := htmlDataset;
 
         //  JavaScript
         jsRecord := RECORD
-            STRING Example__javascript;
+            UNICODE Example__javascript;
         END;
         jsDataset := DATASET([
             {JavaScript.setInnerText('Plain <Text>')},
             {JavaScript.setCellStyle('text-align', 'center') + JavaScript.setInnerText('Center Text')},
-            {JavaScript.colorCell('Pink and Orange', 'pink', 'orange')}
+            {JavaScript.colorCell(u'Pink and Orange 非常', 'pink', 'orange')}
         ], jsRecord);
         EXPORT JavaScriptTest := jsDataset;
 
