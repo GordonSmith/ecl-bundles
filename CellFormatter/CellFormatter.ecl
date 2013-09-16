@@ -52,7 +52,7 @@
      ***************************************************************************/
     EXPORT HTML := MODULE
         EXPORT Element(ANY innerText, STRING tag, STRING attributes = '') := FUNCTION
-            RETURN '<' + tag + ' ' + attributes + '>' + innerText + '</' + tag + '>';
+            RETURN '<' + tag + IF(attributes = '', '', ' ' + attributes) + '>' + innerText + '</' + tag + '>';
         END; 
 
         /***************************************************************************

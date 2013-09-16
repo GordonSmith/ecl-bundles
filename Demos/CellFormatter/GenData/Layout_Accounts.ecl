@@ -1,6 +1,6 @@
 EXPORT Layout_Accounts := RECORD
-  QSTRING20 Account;
-  QSTRING8  OpenDate;
+  STRING20 Account;
+  STRING8  OpenDate;
   STRING2   IndustryCode;
   STRING1   AcctType;
   STRING1   AcctRate;
