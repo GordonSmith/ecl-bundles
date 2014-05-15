@@ -1,6 +1,6 @@
 ﻿EXPORT CellFormatter := MODULE, FORWARD
     IMPORT Std;
-
+plop
     /***************************************************************************
      * Background:
      *   The ECl Watch Result Viewer can display cells containing the following 
