@@ -1,0 +1,4 @@
+<Manifest>
+    <Resource filename="./res/*" recursive='1'/>
+    <Resource filename="./res_Chart2D/*" recursive='1'/>
+</Manifest>

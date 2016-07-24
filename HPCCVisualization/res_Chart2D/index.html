@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ECLWatch:  Resource Demo</title>
+    <style>
+        body {
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        #placeholder {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+    <script src="http://viz.hpccsystems.com/v1.14.0-rc7/dist-amd/hpcc-viz.js"></script>
+    <script>
+        var espUrl = window.location.href;
+        switch (window.location.hostname) {
+            case "localhost":
+                espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160724-080751/res_Chart2D/index.html";
+                break;
+        }
+    </script>
+</head>
+<body onresize="doResize();">
+    <div id="placeholder">
+    </div>
+    <script>
+        var grid;
+        require(["../res/Page", "src/chart/Column"], function (Grid, Column) {
+            grid = new Grid()
+                .target("placeholder")
+            ;
+            var connection = grid.createESPConnection();
+            connection.send({}, function (response) {
+                for (var key in response) {
+                    if (response[key + "_chart2d_props"]) {
+                        renderChart(response[key].map(function (row) { return [row.label, row.value]; }), response[key + "_chart2d_props"]);
+                    }
+                }
+                doResize();
+            });
+
+            var widgetCount = 0;
+            function renderChart(data, props) {
+                props = props || {};
+                var widget = new Column()
+                    .columns(["Location", "Total"])
+                    .data(data)
+                ;
+                props.forEach(function (row) {
+                    if (widget[row.key]) {
+                        widget[row.key](row.value);
+                    }
+                });
+                grid._grid.setContent(widgetCount, 0, widget);
+                ++widgetCount;
+            }
+        });
+
+        function doResize() {
+            if (grid) {
+                grid
+                    .resize()
+                    .lazyRender()
+                ;
+            }
+        };
+    </script>
+</body>
+</html>
