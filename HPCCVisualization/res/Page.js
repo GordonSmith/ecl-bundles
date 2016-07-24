@@ -22,6 +22,19 @@
                 this._espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160724-080751/res_Chart2D/index.html";
                 break;
         }
+        this._espConnection = Comms.createESPConnection(this._espUrl);
+
+        var urlParts = this._espUrl.split("/WsWorkunits/");
+        urlParts.pop();
+        urlParts.push("WUInfo.json");
+        this._wuInfo = new Comms.Basic()
+            .url(urlParts.join("/WsWorkunits/"))
+        ;
+        urlParts.pop();
+        urlParts.push("WUUpdate.json");
+        this._wuUpdate = new Comms.Basic()
+            .url(urlParts.join("/WsWorkunits/"))
+        ;
     }
     Page.prototype = Object.create(Grid.prototype);
     Page.prototype.constructor = Page;
@@ -37,6 +50,40 @@
             .setContent(0, 2, this._showProperties ? this._propEditor :  null)
             .render()
         ;
+        if (!this._showProperties) {
+            var context = this;
+            new Promise(function (resolve, reject) {
+                var xhr = new XMLHttpRequest();
+                xhr.onload = function (e) {
+                    if (this.status >= 200 && this.status < 300) {
+                        resolve(JSON.parse(this.response));
+                    }
+                    else {
+                        reject(Error(this.statusText));
+                    }
+                };
+                xhr.onerror = function () {
+                    reject(Error(this.statusText));
+                };
+                xhr.open("POST", context._wuUpdate.url(), true);
+                //xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                /*
+                var data = new FormData();
+                data.append("Wuid", context._espConnection.wuid())
+                data.append("ApplicationValues.ApplicationValue.0.Application", "aababa")
+                data.append("ApplicationValues.ApplicationValue.0.Name", "test")
+                data.append("ApplicationValues.ApplicationValue.0.value", "008")
+                data.append("ApplicationValues.ApplicationValue.itemcount", 1)
+                xhr.send(data);
+                */
+                xhr.send("Wuid=" + context._espConnection.wuid() + "&" +
+                    "ApplicationValues.ApplicationValue.0.Application=aababa" + "&" +
+                    "ApplicationValues.ApplicationValue.0.Name=test" + "&" +
+                    "ApplicationValues.ApplicationValue.0.value=008" + "&" +
+                    "ApplicationValues.ApplicationValue.itemcount=1");
+            });
+        }
         return this;
     };
 
