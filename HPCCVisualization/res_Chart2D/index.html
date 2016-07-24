@@ -29,34 +29,12 @@
     <script>
         var grid;
         require(["../res/Page", "src/chart/Column"], function (Grid, Column) {
-            grid = new Grid()
+            new Grid()
                 .target("placeholder")
+                .render(function (w) {
+                    grid = w;
+                })
             ;
-            var connection = grid.createESPConnection();
-            connection.send({}, function (response) {
-                for (var key in response) {
-                    if (response[key + "_chart2d_props"]) {
-                        renderChart(response[key].map(function (row) { return [row.label, row.value]; }), response[key + "_chart2d_props"]);
-                    }
-                }
-                doResize();
-            });
-
-            var widgetCount = 0;
-            function renderChart(data, props) {
-                props = props || {};
-                var widget = new Column()
-                    .columns(["Location", "Total"])
-                    .data(data)
-                ;
-                props.forEach(function (row) {
-                    if (widget[row.key]) {
-                        widget[row.key](row.value);
-                    }
-                });
-                grid._grid.setContent(widgetCount, 0, widget);
-                ++widgetCount;
-            }
         });
 
         function doResize() {

@@ -1,25 +1,21 @@
 "use strict";
 (function (root, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["d3", "src/common/SVGWidget", "src/layout/Grid", "src/common/Icon", "src/other/Comms", "src/other/PropertyEditor", "css!./Page"], factory);
+        define(["d3", "src/common/SVGWidget", "src/layout/Grid", "src/common/Icon", "src/chart/Column", "src/other/Comms", "src/other/Persist", "src/other/PropertyEditor", "css!./Page"], factory);
     }
-}(this, function (d3, SVGWidget, Grid, Icon, Comms, PropertyEditor) {
+}(this, function (d3, SVGWidget, Grid, Icon, Column, Comms, Persist, PropertyEditor) {
     function Page() {
         Grid.call(this);
 
-        this._grid = new Grid()
-        ;
-
         this._propEditor = new PropertyEditor()
             .show_settings(true)
-            .widget(this._grid)
         ;
 
         this._espUrl = window.location.href;
         switch (window.location.hostname) {
             //  Used for debugging JS
             case "localhost":
-                this._espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160724-080751/res_Chart2D/index.html";
+                this._espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160724-152957/res_Chart2D/index.html";
                 break;
         }
         this._espConnection = Comms.createESPConnection(this._espUrl);
@@ -42,6 +38,68 @@
 
     Page.prototype.publish("showToolbar", true, "boolean", "Show Toolbar");
 
+    Page.prototype.serialize = function (obj) {
+        var str = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
+            }
+        }
+        return str.join("&");
+    };
+
+    Page.prototype.send = function (url, method, request) {
+        var context = this;
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function (e) {
+                if (this.status >= 200 && this.status < 300) {
+                    resolve(JSON.parse(this.response));
+                }
+                else {
+                    reject(Error(this.statusText));
+                }
+            };
+            xhr.onerror = function () {
+                reject(Error(this.statusText));
+            };
+            xhr.open(method, url, true);
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+            //xhr.setRequestHeader("Access-Control-Allow-Headers", "Content-Type");
+            //xhr.setRequestHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            xhr.send(context.serialize(request));
+        });
+    };
+
+    Page.prototype.post = function (url, request) {
+        return this.send(url, "POST", request);
+    };
+
+    Page.prototype.get = function (url, request) {
+        return this.send(url, "GET", request);
+    };
+
+    Page.prototype.wuInfo = function (request) {
+        request = request || {};
+        request.Wuid = this._espConnection.wuid();
+        request.TruncateEclTo64k = true;
+        request.IncludeExceptions = false;
+        request.IncludeGraphs = false;
+        request.IncludeSourceFiles = false;
+        request.IncludeResults = true;
+        request.IncludeResultsViewNames = false;
+        request.IncludeVariables = false;
+        request.IncludeTimers = false;
+        request.IncludeResourceURLs = false;
+        request.IncludeDebugValues = false;
+        request.IncludeApplicationValues = true;
+        request.IncludeWorkflows = false;
+        request.IncludeXmlSchemas = false;
+        request.SuppressResultSchemas = true;
+        return this.post(this._wuInfo.url(), request);
+    };
+        
     Page.prototype.toggleProperties = function () {
         this._showProperties = !this._showProperties;
         this._buttonShowProps.element().classed("show", this._showProperties);
@@ -52,36 +110,12 @@
         ;
         if (!this._showProperties) {
             var context = this;
-            new Promise(function (resolve, reject) {
-                var xhr = new XMLHttpRequest();
-                xhr.onload = function (e) {
-                    if (this.status >= 200 && this.status < 300) {
-                        resolve(JSON.parse(this.response));
-                    }
-                    else {
-                        reject(Error(this.statusText));
-                    }
-                };
-                xhr.onerror = function () {
-                    reject(Error(this.statusText));
-                };
-                xhr.open("POST", context._wuUpdate.url(), true);
-                //xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                /*
-                var data = new FormData();
-                data.append("Wuid", context._espConnection.wuid())
-                data.append("ApplicationValues.ApplicationValue.0.Application", "aababa")
-                data.append("ApplicationValues.ApplicationValue.0.Name", "test")
-                data.append("ApplicationValues.ApplicationValue.0.value", "008")
-                data.append("ApplicationValues.ApplicationValue.itemcount", 1)
-                xhr.send(data);
-                */
-                xhr.send("Wuid=" + context._espConnection.wuid() + "&" +
-                    "ApplicationValues.ApplicationValue.0.Application=aababa" + "&" +
-                    "ApplicationValues.ApplicationValue.0.Name=test" + "&" +
-                    "ApplicationValues.ApplicationValue.0.value=008" + "&" +
-                    "ApplicationValues.ApplicationValue.itemcount=1");
+            this.post(context._wuUpdate.url(), {
+                "Wuid": context._espConnection.wuid(),
+                "ApplicationValues.ApplicationValue.0.Application": "HPCC-VizBundle",
+                "ApplicationValues.ApplicationValue.0.Name": "persist",
+                "ApplicationValues.ApplicationValue.0.Value": Persist.serialize(context._grid),
+                "ApplicationValues.ApplicationValue.itemcount": 1
             });
         }
         return this;
@@ -136,8 +170,102 @@
             })
             .remove()
         ;
-
     };
 
+    Page.prototype.getPersist = function () {
+        return this.wuInfo().then(function (response) {
+            var persistString;
+            if (response.WUInfoResponse && response.WUInfoResponse.Workunit && response.WUInfoResponse.Workunit.ApplicationValues && response.WUInfoResponse.Workunit.ApplicationValues.ApplicationValue) {
+                response.WUInfoResponse.Workunit.ApplicationValues.ApplicationValue.filter(function (row) {
+                    return row.Application === "HPCC-VizBundle" && row.Name === "persist";
+                }).forEach(function (row) {
+                    persistString = row.Value;
+                });
+            }
+            return persistString;
+        }, function () {
+            return "";
+        });
+    };
+
+    Page.prototype.getResults = function () {
+        var connection = this.createESPConnection();
+        return new Promise(function (resolve, reject) {
+            connection.send({}, function (response) {
+                var retVal = {
+                };
+                for (var key in response) {
+                    if (response[key + "_chart2d_props"]) {
+                        retVal[key] = {
+                            data: response[key].map(function (row) { return [row.label, row.value]; }),
+                            props: response[key + "_chart2d_props"]
+                        }
+                    }
+                }
+                resolve(retVal);
+            });
+        });
+    };
+
+    Page.prototype.createWidgets = function (results) {
+        var context = this;
+        return new Promise(function (resolve, reject) {
+            var grid = new Grid();
+            var widgetCount = 0;
+            for (var key in results) {
+                var column = new Column();
+                column
+                    .id(key)
+                    .columns(["Location", "Total"])
+                    .data(results[key].data)
+                ;
+                results[key].props.forEach(function (row) {
+                    if (column[row.key]) {
+                        column[row.key](row.value);
+                    }
+                });
+                grid.setContent(widgetCount, 0, column);
+                ++widgetCount;
+            }
+            resolve(grid);
+        });
+    };
+
+    Page.prototype.deserializeWidgets = function (persist, results) {
+        var context = this;
+        return new Promise(function (resolve, reject) {
+            Persist.create(persist, function (grid) {
+                for (var key in results) {
+                    var widget = grid.getContent(key);
+                    if (widget) {
+                        widget.data(results[key].data);
+                    }
+                }
+                resolve(grid);
+            });
+        });
+    };
+
+    Page.prototype.render = function (callback) {
+        if (this._grid) {
+            return Grid.prototype.render.apply(this, arguments);
+        }
+        var context = this;
+        var args = arguments;
+
+        Promise.all([this.getPersist(), this.getResults()]).then(function (promises) {
+            var persist = promises[0];
+            var results = promises[1];
+            var promise = persist ? context.deserializeWidgets(persist, results) : context.createWidgets(results);
+            promise.then(function (grid) {
+                context._grid = grid;
+                context._propEditor
+                    .widget(context._grid)
+                ;
+                return Grid.prototype.render.apply(context, args);
+            });
+        });
+        return this;
+    };
     return Page;
 }));
