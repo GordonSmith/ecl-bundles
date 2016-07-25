@@ -1,4 +1,5 @@
-﻿EXPORT Chart2D := MODULE
+﻿IMPORT $.Common;
+EXPORT Chart2D := MODULE(Common)
     IMPORT Std;
 
     EXPORT Bundle := MODULE(Std.BundleBase)
@@ -17,18 +18,6 @@
 			RETURN SEQUENTIAL(OUTPUT(_data, named(name)), OUTPUT(_props, named(name + '_chart2d_props')));
 		END;
 		
-		EXPORT aggregateData(_data, _label, _value, _aggr = 'SUM') := FUNCTIONMACRO
-			RETURN TABLE(_data, { 
-				STRING label := _data._label, 
-				REAL value := CASE(_aggr, 'SUM' => SUM(GROUP, _value),
-																	'MIN' => MIN(GROUP, _value),
-																	'MAX' => MAX(GROUP, _value),
-																	'AVE' => AVE(GROUP, _value),
-																	'COUNT' => COUNT(GROUP), 
-																	SUM(GROUP, _value))
-				}, _label, FEW);
-		ENDMACRO;
-
     EXPORT __selfTest := MODULE
 			IMPORT $.SampleData;
 			d := aggregateData(SampleData.DataBreach, State, IndividualsAffected, 'SUM');
