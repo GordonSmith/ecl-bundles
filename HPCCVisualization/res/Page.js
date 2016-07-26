@@ -1,9 +1,9 @@
 "use strict";
 (function (root, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["d3", "src/common/SVGWidget", "src/layout/Grid", "src/common/Icon", "src/chart/Column", "src/other/Comms", "src/other/Persist", "src/other/PropertyEditor", "css!./Page"], factory);
+        define(["d3", "src/common/SVGWidget", "src/layout/Grid", "src/common/Icon", "src/marshaller/HTML", "src/chart/Column", "src/other/Comms", "src/other/Persist", "src/other/PropertyEditor", "css!./Page"], factory);
     }
-}(this, function (d3, SVGWidget, Grid, Icon, Column, Comms, Persist, PropertyEditor) {
+}(this, function (d3, SVGWidget, Grid, Icon, HTML, Column, Comms, Persist, PropertyEditor) {
     function Page() {
         Grid.call(this);
 
@@ -15,7 +15,7 @@
         switch (window.location.hostname) {
             //  Used for debugging JS
             case "localhost":
-                this._espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160724-152957/res_Chart2D/index.html";
+                this._espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160726-140121/res/index.html";
                 break;
         }
         this._espConnection = Comms.createESPConnection(this._espUrl);
@@ -231,18 +231,45 @@
         });
     };
 
-    Page.prototype.deserializeWidgets = function (persist, results) {
+    Page.prototype.createDDL = function () {
+        var connection = this.createESPConnection();
+        var context = this;
+        return new Promise(function (resolve, reject) {
+            connection.send({}, function (response) {
+                for (var key in response) {
+                    if (response[key + "_DDL"]) {
+                        resolve(retVal);
+                        break;
+                    }
+                }
+            });
+        });
+    };
+
+
+    Page.prototype.deserializeWidgets = function (persist) {
         var context = this;
         return new Promise(function (resolve, reject) {
             Persist.create(persist, function (grid) {
-                for (var key in results) {
-                    var widget = grid.getContent(key);
-                    if (widget) {
-                        widget.data(results[key].data);
+                context.getResults().then(function (results) {
+                    for (var key in results) {
+                        var widget = grid.getContent(key);
+                        if (widget) {
+                            widget.data(results[key].data);
+                        }
                     }
-                }
-                resolve(grid);
+                    resolve(grid);
+                })
             });
+        });
+    };
+
+    Page.prototype.createMarshaller = function () {
+        var context = this;
+        return new Promise(function (resolve, reject) {
+            resolve(new HTML()
+                .ddlUrl(context._espUrl + "?ResultName=Dashboard_DDL")
+            );
         });
     };
 
@@ -253,10 +280,8 @@
         var context = this;
         var args = arguments;
 
-        Promise.all([this.getPersist(), this.getResults()]).then(function (promises) {
-            var persist = promises[0];
-            var results = promises[1];
-            var promise = persist ? context.deserializeWidgets(persist, results) : context.createWidgets(results);
+        this.getPersist().then(function (persist) {
+            var promise = persist ? context.deserializeWidgets(persist) : context.createMarshaller();
             promise.then(function (grid) {
                 context._grid = grid;
                 context._propEditor
