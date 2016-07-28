@@ -15,7 +15,7 @@
         switch (window.location.hostname) {
             //  Used for debugging JS
             case "localhost":
-                this._espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160726-140121/res/index.html";
+                this._espUrl = "http://10.241.100.159:8010/WsWorkunits/res/W20160722-152038/res/index.html";
                 break;
         }
         this._espConnection = Comms.createESPConnection(this._espUrl);
@@ -264,12 +264,30 @@
         });
     };
 
+    function endsWith(str, searchString, position) {
+        var subjectString = str.toString();
+        if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+            position = subjectString.length;
+        }
+        position -= searchString.length;
+        var lastIndex = subjectString.indexOf(searchString, position);
+        return lastIndex !== -1 && lastIndex === position;
+    };
+
     Page.prototype.createMarshaller = function () {
         var context = this;
+        var connection = this.createESPConnection();
         return new Promise(function (resolve, reject) {
-            resolve(new HTML()
-                .ddlUrl(context._espUrl + "?ResultName=Dashboard_DDL")
-            );
+            connection.fetchResultNames(function (response) {
+                for (var key in response) {
+                    if (endsWith(key, "_DDL")) {
+                        resolve(new HTML()
+                            .ddlUrl(context._espUrl + "?ResultName=" + key)
+                        );
+                        break;
+                    }
+                }
+            });
         });
     };
 
