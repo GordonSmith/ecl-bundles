@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HPCC:  Visualization</title>
+
+    <script src="../Visualization/node_modules/requirejs/require.js"></script>
+    <script src="../Visualization/src/loader.js"></script>
+    <!--
+    <script src="http://viz.hpccsystems.com/v1.14.0-rc8/dist-amd/hpcc-viz.js"></script>
+    -->
+    <!--
+    <script src="../Visualization/node_modules/requirejs/require.js"></script>
+    <script src="../Visualization/src/loader.js"></script>
+    -->
+    <style>
+        body {
+            margin: 0px;
+            overflow: hidden;
+        }
+
+        #placeholder {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body onresize="doResize();">
+    <div id="placeholder">
+    </div>
+    <script>
+        var grid;
+        require(["src/composite/Dermatology", "src/other/Comms", "src/common/Utility"], function (Dermatology, Comms, Utility) {
+            var dermatology = new Dermatology()
+                .target("placeholder")
+                .render(function (w) {
+                    grid = w;
+                })
+            ;
+
+            var espUrl = window.location.href;
+            switch (window.location.hostname) {
+                //  Used for debugging JS
+                case "localhost":
+                    espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160730-131326/res/index.html";
+                    break;
+            }
+            var espConnection = Comms.createESPConnection(espUrl);
+            espConnection.result("__hpcc_visualization").then(function (response) {
+                if (response && response.length) {
+                    var meta = response[0];
+                    var lowerMappings = {};
+                    for (var key in meta.mappings) {
+                        lowerMappings[key] = meta.mappings[key].toLowerCase()
+                    }
+                    var data = meta.data.map(function (row) {
+                        return [row[lowerMappings.label], +row[lowerMappings.weight]];
+                    })
+                    Utility.requireWidget(meta.classid).then(function (Widget) {
+                        dermatology
+                            .widget(new Widget()
+                                .columns([meta.mappings.label, meta.mappings.weight])
+                                .data(data))
+                            .render()
+                        ;
+                    });
+                }
+            })
+        });
+
+        function doResize() {
+            if (grid) {
+                grid
+                    .resize()
+                    .lazyRender()
+                ;
+            }
+        };
+    </script>
+</body>
+</html>
