@@ -2,6 +2,11 @@
 <html>
 <head>
     <title>ECLWatch:  Resource Demo</title>
+    <!--
+    <script src="http://viz.hpccsystems.com/v1.14.0-rc8/dist-amd/hpcc-viz.js"></script>
+    -->
+    <script src="https://rawgit.com/jrburke/requirejs/2.2.0/require.js"></script>
+    <script src="../Visualization/src/loader.js"></script>
     <style>
         body {
             margin: 0px;
@@ -13,19 +18,14 @@
             height: 100vh;
         }
     </style>
-    <!--
-    <script src="http://viz.hpccsystems.com/v1.14.0-rc7/dist-amd/hpcc-viz.js"></script>
-    -->
-    <script src="https://rawgit.com/jrburke/requirejs/2.2.0/require.js"></script>
-    <script src="../Visualization/src/loader.js"></script>
 </head>
 <body onresize="doResize();">
     <div id="placeholder">
     </div>
     <script>
         var grid;
-        require(["../res/Page"], function (Page) {
-            new Page()
+        require(["src/composite/Dermatology"], function (Dermatology) {
+            new Dermatology()
                 .target("placeholder")
                 .render(function (w) {
                     grid = w;
