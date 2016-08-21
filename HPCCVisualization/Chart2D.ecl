@@ -14,49 +14,63 @@
     EXPORT KeyValueDef := { STRING key, STRING value };
     EXPORT RecordDef := { STRING label, REAL value };
 		
-		EXPORT aggregateData2(_data, _label, _value, _aggr) := FUNCTIONMACRO
-			RETURN TABLE(_data, { 
-				STRING label := _data._label, 
-				REAL value := CASE(_aggr, 	'SUM' => SUM(GROUP, _value),
-											'MIN' => MIN(GROUP, _value),
-											'MAX' => MAX(GROUP, _value),
-											'AVE' => AVE(GROUP, _value),
-											'COUNT' => COUNT(GROUP), 
-											SUM(GROUP, _value))
-				}, _label, FEW);
-		ENDMACRO;
-		
 		EXPORT aggregateData(_d, _aggrBy, _groupBy, _AGGR) := FUNCTIONMACRO
 				LOCAL aggr := _AGGR(GROUP, _d._groupBy);
 				LOCAL aggrRec := { _d._aggrBy, _groupBy := aggr};
 				RETURN TABLE(_d, aggrRec, _d._aggrBy, FEW);
 		ENDMACRO;
 		
-		SHARED Meta(_classID, labelField, valueField, _data) := FUNCTIONMACRO
+		SHARED Meta2D_fm(_classID, labelField, valueField, _data) := FUNCTIONMACRO
 				LOCAL MappingDef := RECORD
 						STRING label;
 						STRING weight;
 				END;
-				LOCAL MetaDef := RECORD 
+				LOCAL TwoDMetaDef := RECORD 
 						STRING classID;
 						MappingDef mappings;
 						DATASET(RECORDOF(_data)) __data { XPATH('data') };
 				END;
-				LOCAL ds := DATASET([{_classID, {labelField, valueField}, _data}], MetaDef);
+				LOCAL ds := DATASET([{_classID, {labelField, valueField}, _data}], TwoDMetaDef);
 				RETURN OUTPUT(ds, NAMED('__hpcc_visualization'));
 		ENDMACRO;
 
     EXPORT Column(DATASET(RecordDef) _data, DATASET(KeyValueDef) _props = DATASET([], KeyValueDef), STRING name = 'myChart') := FUNCTION
-			RETURN SEQUENTIAL(OUTPUT(_data, named(name)), OUTPUT(_props, named(name + '_chart2d_props')));
+				RETURN SEQUENTIAL(OUTPUT(_data, named(name)), OUTPUT(_props, named(name + '_chart2d_props')));
+		END;
+
+		SHARED MetaDef := RECORD 
+				STRING classID;
+				STRING outputName;
+				DATASET(KeyValueDef) properties;
 		END;
 		
-    EXPORT __selfTest := MODULE
+		SHARED Meta(STRING _classID, STRING _outputName, DATASET(KeyValueDef) _properties = DATASET([], KeyValueDef)) := FUNCTION
+				ds := DATASET([{_classID, _outputName, _properties}], MetaDef);
+				RETURN OUTPUT(ds, NAMED(_outputName + '__hpcc_visualization'));
+		END;
+
+    EXPORT __test_column := MODULE
+				ds := DATASET([	{'English', 5, 43, 41, 92},
+												{'History', 17, 43, 83, 93},
+												{'Geography', 7, 45, 52, 83},
+												{'Chemistry', 16, 73, 52, 83},
+												{'Spanish', 26, 83, 11, 72},
+												{'Bioligy', 66, 60, 85, 6},
+												{'Physics', 46, 20, 53, 7},
+												{'Math', 98, 30, 23, 13}],
+												{STRING subject, INTEGER year1, INTEGER year2, INTEGER year3, INTEGER year4});
+				dataOut := OUTPUT(ds, NAMED('myData'));
+				vizOut := Meta('chart_Column', 'myData');
+				EXPORT run := SEQUENTIAL(dataOut, vizOut);
+    END;
+
+    EXPORT __test_functionMacros := MODULE
 			IMPORT $.SampleData;
-			t := aggregateData(SampleData.DataBreach, TypeOfBreach, IndividualsAffected, SUM);
-			EXPORT run := Meta('chart_Pie', 'TypeOfBreach', 'IndividualsAffected', t);
+			ds1 := aggregateData(SampleData.DataBreach, TypeOfBreach, IndividualsAffected, SUM);
+			EXPORT run := Meta2D_fm('chart_Column', 'TypeOfBreach', 'IndividualsAffected', ds1);
     END;
 		
 		EXPORT main := FUNCTION
-			RETURN SEQUENTIAL(__selfTest.run);
+			RETURN SEQUENTIAL(__test_column.run, __test_functionMacros.run);
 		END;
 END;
