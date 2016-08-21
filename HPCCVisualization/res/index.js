@@ -32,9 +32,11 @@ function doRender(require) {
                 if (response && response.length) {
                     var meta = response[0];
                     retVal.classID = meta.classid;
+                    retVal.id = id;
                     retVal.properties = meta.properties;
+                    retVal.resultName = meta.resultname;
                 }
-                return espConnection.result(meta.resultname).then(function (response) {
+                return espConnection.result(retVal.resultName).then(function (response) {
                     retVal.columns = [];
                     retVal.data = [];
                     if (response && response.length) {
@@ -66,31 +68,40 @@ function doRender(require) {
         });
 
         Promise.all([persistPromise, vizPromise]).then(function (promises) {
-            var contentPromises = [];
-            promises[1].forEach(function (viz) {
-                contentPromises.push(Utility.requireWidget(viz.classID).then(function (Widget) {
-                    var retVal = new Widget()
-                        .columns(viz.columns)
-                        .data(viz.data)
-                    ;
-                    viz.properties.forEach(function(property){
-                        if (typeof (retVal[property.key]) === "function") {
-                            retVal[property.key](property.value);
-                        }
-                    });
-                    return retVal;
-                }))
-            });
-            Promise.all(contentPromises).then(function (content) {
-                var grid = new Grid();
-                content.forEach(function (widget, i) {
-                    grid.setContent(0, i, widget);
-                });
+            var grid = promises[0];
+            if (grid) {
                 dermatology
                     .widget(grid)
                     .render()
                 ;
-            });
+            } else {
+                var contentPromises = [];
+                promises[1].forEach(function (viz) {
+                    contentPromises.push(Utility.requireWidget(viz.classID).then(function (Widget) {
+                        var retVal = new Widget()
+                            .id(viz.id)
+                            .columns(viz.columns)
+                            .data(viz.data)
+                        ;
+                        viz.properties.forEach(function(property){
+                            if (typeof (retVal[property.key]) === "function") {
+                                retVal[property.key](property.value);
+                            }
+                        });
+                        return retVal;
+                    }))
+                });
+                Promise.all(contentPromises).then(function (content) {
+                    var grid = new Grid();
+                    content.forEach(function (widget, i) {
+                        grid.setContent(0, i, widget);
+                    });
+                    dermatology
+                        .widget(grid)
+                        .render()
+                    ;
+                });
+            }
         });
             /*
 
