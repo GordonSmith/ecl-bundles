@@ -1,5 +1,6 @@
+"use strict";
 function doRender(require) {
-    require(["src/composite/Dermatology", "src/other/Comms", "src/other/Persist", "src/common/Utility"], function (Dermatology, Comms, Persist, Utility) {
+    require(["src/composite/Dermatology", "src/other/Comms", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Comms, Grid, Persist, Utility) {
         var dermatology = new Dermatology()
             .target("placeholder")
             .render(function (w) {
@@ -26,21 +27,16 @@ function doRender(require) {
         });
 
         function fetchData(id) {
-            return new Promise(function (resolve, reject) {
-                var metaPromise = espConnection.result(id + "__hpcc_visualization").then(function (response) {
-                    retVal = {};
-                    if (response && response.length) {
-                        var meta = response[0];
-                        retVal.classID = meta.classid;
-                        retVal.properties = meta.properties;
-                    }
-                    return retVal;
-                });
-                var dataPromise = espConnection.result(id).then(function (response) {
-                    var retVal = {
-                        columns: [],
-                        data: []
-                    };
+            return espConnection.result(id).then(function (response) {
+                var retVal = {};
+                if (response && response.length) {
+                    var meta = response[0];
+                    retVal.classID = meta.classid;
+                    retVal.properties = meta.properties;
+                }
+                return espConnection.result(meta.resultname).then(function (response) {
+                    retVal.columns = [];
+                    retVal.data = [];
                     if (response && response.length) {
                         var colIdx = {};
                         response.forEach(function (row, rowIdx) {
@@ -54,21 +50,15 @@ function doRender(require) {
                             }
                             retVal.data.push(rowArr);
                         });
-                        return retVal
                     }
+                    return retVal
                 });
-                resolve(Promise.all([metaPromise, dataPromise]).then(function (responses) {
-                    var meta = responses[0];
-                    meta.columns = responses[1].columns;
-                    meta.data = responses[1].data;
-                    return meta;
-                }));
             });
         }
-        vizPromise = espConnection.fetchResultNames().then(function (response) {
+        var vizPromise = espConnection.fetchResultNames().then(function (response) {
             var promises = []
             for (var key in response) {
-                if (response[key + "__hpcc_visualization"]) {
+                if (Utility.endsWith(key, "__hpcc_visualization")) {
                     promises.push(fetchData(key));
                 }
             }
@@ -76,8 +66,34 @@ function doRender(require) {
         });
 
         Promise.all([persistPromise, vizPromise]).then(function (promises) {
-            var widget = promises[0];
-            var viz = promises[1][0];
+            var contentPromises = [];
+            promises[1].forEach(function (viz) {
+                contentPromises.push(Utility.requireWidget(viz.classID).then(function (Widget) {
+                    var retVal = new Widget()
+                        .columns(viz.columns)
+                        .data(viz.data)
+                    ;
+                    viz.properties.forEach(function(property){
+                        if (typeof (retVal[property.key]) === "function") {
+                            retVal[property.key](property.value);
+                        }
+                    });
+                    return retVal;
+                }))
+            });
+            Promise.all(contentPromises).then(function (content) {
+                var grid = new Grid();
+                content.forEach(function (widget, i) {
+                    grid.setContent(0, i, widget);
+                });
+                dermatology
+                    .widget(grid)
+                    .render()
+                ;
+            });
+        });
+            /*
+
             if (widget) {
                 dermatology
                     .widget(widget
@@ -98,5 +114,6 @@ function doRender(require) {
                 console.log("no visualization info found");
             }
         });
+        */
     });
 }

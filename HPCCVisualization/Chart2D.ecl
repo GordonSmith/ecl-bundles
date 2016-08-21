@@ -39,14 +39,15 @@
 		END;
 
 		SHARED MetaDef := RECORD 
-				STRING classID;
-				STRING outputName;
+				STRING classid;
+				STRING resultname;
 				DATASET(KeyValueDef) properties;
 		END;
 		
-		SHARED Meta(STRING _classID, STRING _outputName, DATASET(KeyValueDef) _properties = DATASET([], KeyValueDef)) := FUNCTION
+		SHARED Meta(STRING _classID, STRING _outputName, DATASET(KeyValueDef) _properties = DATASET([], KeyValueDef), STRING _id = '') := FUNCTION
+				id := IF(_id = '', _outputName, _id);
 				ds := DATASET([{_classID, _outputName, _properties}], MetaDef);
-				RETURN OUTPUT(ds, NAMED(_outputName + '__hpcc_visualization'));
+				RETURN OUTPUT(ds, NAMED(id + '__hpcc_visualization'));
 		END;
 
     EXPORT __test_column := MODULE
@@ -61,7 +62,9 @@
 												{STRING subject, INTEGER year1, INTEGER year2, INTEGER year3, INTEGER year4});
 				dataOut := OUTPUT(ds, NAMED('myData'));
 				vizOut := Meta('chart_Column', 'myData');
-				EXPORT run := SEQUENTIAL(dataOut, vizOut);
+				vizOut2 := Meta('chart_Column', 'myData', DATASET([{'orientation', 'vertical'}], KeyValueDef), 'myData2');
+				vizOut3 := Meta('chart_Pie', 'myData', DATASET([{'orientation', 'vertical'}], KeyValueDef), 'myData3');
+				EXPORT run := SEQUENTIAL(dataOut, vizOut, vizOut2, vizOut3);
     END;
 
     EXPORT __test_functionMacros := MODULE
@@ -71,6 +74,6 @@
     END;
 		
 		EXPORT main := FUNCTION
-			RETURN SEQUENTIAL(__test_column.run, __test_functionMacros.run);
+			RETURN SEQUENTIAL(__test_column.run);//, __test_functionMacros.run);
 		END;
 END;
