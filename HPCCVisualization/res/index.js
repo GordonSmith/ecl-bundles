@@ -1,33 +1,40 @@
 "use strict";
-function doRender(require) {
+function requireApp(require, callback) {
     require(["src/composite/Dermatology", "src/other/Comms", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Comms, Grid, Persist, Utility) {
-        var dermatology = new Dermatology()
-            .target("placeholder")
-            .render(function (w) {
-                grid = w;
-            })
-        ;
+        function App() {
+            Dermatology.call(this);
+        }
+        App.prototype = Object.create(Dermatology.prototype);
+        App.prototype.constructor = App;
+        App.prototype._class += " App";
 
-        var espConnection = Comms.createESPConnection(espUrl);
+        App.prototype.espUrl = function (_) {
+            if (!arguments.length) return this._espUrl;
+            this._espUrl = _;
+            this._espConnection = Comms.createESPConnection(this._espUrl);
+            return this;
+        };
 
-        var toggleProperties = dermatology.toggleProperties;
-        dermatology.toggleProperties = function () {
-            toggleProperties.apply(dermatology, arguments);
-            if (!dermatology._showProperties) {
-                var persistStr = Persist.serialize(dermatology.widget());
-                espConnection.appData("HPCC-VizBundle", "persist", persistStr);
+        App.prototype.toggleProperties = function () {
+            Dermatology.prototype.toggleProperties.apply(this, arguments);
+            if (!this._showProperties) {
+                var persistStr = Persist.serialize(this.widget());
+                this._espConnection.appData("HPCC-VizBundle", "persist", persistStr);
             }
         };
 
-        var persistPromise = espConnection.appData("HPCC-VizBundle", "persist").then(function (persistStr) {
-            if (persistStr) {
-                return Persist.create(persistStr);
-            }
-            return Promise.resolve(null);
-        });
+        App.prototype.fetchPersist = function (id) {
+            return this._espConnection.appData("HPCC-VizBundle", "persist").then(function (persistStr) {
+                if (persistStr) {
+                    return Persist.create(persistStr);
+                }
+                return Promise.resolve(null);
+            });
+        };
 
-        function fetchData(id) {
-            return espConnection.result(id).then(function (response) {
+        App.prototype.fetchData = function (id) {
+            var context = this;
+            return this._espConnection.result(id).then(function (response) {
                 var retVal = {};
                 if (response && response.length) {
                     var meta = response[0];
@@ -36,7 +43,10 @@ function doRender(require) {
                     retVal.properties = meta.properties;
                     retVal.resultName = meta.resultname;
                 }
-                return espConnection.result(retVal.resultName).then(function (response) {
+                var widgetPromise = Utility.requireWidget(retVal.classID).then(function (Widget) {
+                    retVal.widgetClass = Widget;
+                });
+                var dataPromise = context._espConnection.result(retVal.resultName).then(function (response) {
                     retVal.columns = [];
                     retVal.data = [];
                     if (response && response.length) {
@@ -55,76 +65,69 @@ function doRender(require) {
                     }
                     return retVal
                 });
+                return Promise.all([widgetPromise, dataPromise]).then(function (promises) {
+                    return retVal;
+                });
             });
-        }
-        var vizPromise = espConnection.fetchResultNames().then(function (response) {
-            var promises = []
-            for (var key in response) {
-                if (Utility.endsWith(key, "__hpcc_visualization")) {
-                    promises.push(fetchData(key));
+        };
+
+        App.prototype.fetchVisualizations = function () {
+            var context = this;
+            return this._espConnection.fetchResultNames().then(function (response) {
+                var promises = []
+                for (var key in response) {
+                    if (Utility.endsWith(key, "__hpcc_visualization")) {
+                        promises.push(context.fetchData(key));
+                    }
                 }
-            }
-            return Promise.all(promises);
-        });
+                return Promise.all(promises);
+            });
+        };
 
-        Promise.all([persistPromise, vizPromise]).then(function (promises) {
-            var grid = promises[0];
-            if (grid) {
-                dermatology
-                    .widget(grid)
-                    .render()
-                ;
-            } else {
-                var contentPromises = [];
-                promises[1].forEach(function (viz) {
-                    contentPromises.push(Utility.requireWidget(viz.classID).then(function (Widget) {
-                        var retVal = new Widget()
-                            .id(viz.id)
-                            .columns(viz.columns)
-                            .data(viz.data)
-                        ;
-                        viz.properties.forEach(function(property){
-                            if (typeof (retVal[property.key]) === "function") {
-                                retVal[property.key](property.value);
+        App.prototype.update = function () {
+            Dermatology.prototype.update.apply(this, arguments);
+            if (this._prevEspUrl !== this.espUrl()) {
+                this._prevEspUrl = this.espUrl();
+
+                var context = this;
+                Promise.all([this.fetchPersist(), this.fetchVisualizations()]).then(function (promises) {
+                    var grid = promises[0];
+                    if (!grid) {
+                        grid = new Grid();
+                    }
+
+                    var metas = promises[1];
+                    metas.forEach(function (meta, i) {
+                        var widget = grid.getContent(meta.id);
+                        var colPos = grid.content().length;
+                        if (!widget) {
+                            widget = new meta.widgetClass()
+                                .id(meta.id)
+                            ;
+                            meta.properties.forEach(function (property) {
+                                if (typeof (widget[property.key]) === "function") {
+                                    widget[property.key](property.value);
+                                }
+                            });
+                            while (grid.getContent(0, colPos)) {
+                                ++colPos
                             }
-                        });
-                        return retVal;
-                    }))
-                });
-                Promise.all(contentPromises).then(function (content) {
-                    var grid = new Grid();
-                    content.forEach(function (widget, i) {
-                        grid.setContent(0, i, widget);
+                            grid.setContent(0, colPos, widget);
+                        }
+                        widget
+                            .columns(meta.columns)
+                            .data(meta.data)
+                        ;
                     });
-                    dermatology
-                        .widget(grid)
-                        .render()
-                    ;
-                });
-            }
-        });
-            /*
 
-            if (widget) {
-                dermatology
-                    .widget(widget
-                        .columns(viz.columns)
-                        .data(viz.data))
-                    .render()
-                ;
-            } else if (viz) {
-                Utility.requireWidget(viz.classID).then(function (Widget) {
-                    dermatology
-                        .widget(new Widget()
-                            .columns(viz.columns)
-                            .data(viz.data))
-                        .render()
+                    context
+                        .widget(grid)
+                        .lazyRender()
                     ;
                 });
-            } else {
-                console.log("no visualization info found");
             }
-        });
-        */
+        };
+
+        callback(App);
     });
-}
+};

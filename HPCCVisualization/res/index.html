@@ -18,24 +18,34 @@
     <div id="placeholder">
     </div>
     <script>
-        var grid;
+        var app;
         var espUrl = window.location.href;
         switch (window.location.hostname) {
             //  Used for debugging JS
             case "localhost":
-                espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160821-141709/res/index.html";
+                espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160822-065813/res/index.html";
                 doRender(require);
                 break;
             default:
-                hpccsystems.redirect.github("DERM_WIDGET", "GORDonSmith", function (require) {
+                hpccsystems.redirect.github("DERM_WIDGET", "GordonSmith", function (require) {
                     doRender(require);
                 });
                 break;
         }
 
+        function doRender(requireContext) {
+            requireApp(requireContext, function(App) {
+                app = new App()
+                    .target("placeholder")
+                    .espUrl(espUrl)
+                    .render()
+                ;
+            });
+        }
+
         function doResize() {
-            if (grid) {
-                grid
+            if (app) {
+                app
                     .resize()
                     .lazyRender()
                 ;
