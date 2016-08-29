@@ -190,7 +190,7 @@ function requireApp(require, callback) {
                 context._wuWidgetMap = {};
                 var metas = promises[1];
                 metas.forEach(function (wuWidget, i) {
-                    var widget = context.grid.getContent(wuWidget.id);
+                    var widget = context.grid.getContent(wuWidget.id());
                     var colPos = context.grid.content().length;
                     if (!widget) {
                         widget = wuWidget.createWidget();

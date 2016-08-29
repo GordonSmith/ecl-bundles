@@ -4,8 +4,7 @@
     <title>HPCC:  Visualization</title>
     <link href="./index.css" rel="stylesheet">
 
-    <script src="../Visualization/node_modules/requirejs/require.js"></script>
-    <script src="../Visualization/src/loader.js"></script>
+    <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
     <!--
     <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
     -->
@@ -28,7 +27,7 @@
                 doRender(require);
                 break;
             default:
-                hpccsystems.redirect.github("DERM_WIDGET", "GordonSmith", function (require) {
+                hpccsystems.redirect.github("DERM_WIDGET", "GOrdonSmith", function (require) {
                     doRender(require);
                 });
                 break;
