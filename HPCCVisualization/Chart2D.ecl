@@ -71,14 +71,13 @@
 		
 		EXPORT __test_sampleData := FUNCTION
 				IMPORT $.SampleData;
-//				#OPTION('applyInstantEclTransformationsLimit', 0);
-
+				
 				//  Sample Data  ---
 				DataBreach := SampleData.DataBreach;
 
 				//  Aggregate by TypeOfBreach ---
 				op1 := OUTPUT(TABLE(DataBreach, {BreachType := TypeOfBreach, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, TypeOfBreach, FEW), NAMED('TypeOfBreach'));
-				myColumnChart := Chart2D.Column('myColumnChart', 'TypeOfBreach');
+				myColumnChart := Chart2D.Column('myColumnChart', 'TypeOfBreach', DATASET([{'xAxisFocus', true}], KeyValueDef));
 
 				//  Aggregate by CoveredEntityType ---
 				op2 := OUTPUT(TABLE(DataBreach, {CoveredEntityType, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));

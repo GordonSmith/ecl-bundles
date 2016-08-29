@@ -1,9 +1,9 @@
 "use strict";
 function requireApp(require, callback) {
-    require(["src/composite/Dermatology", "src/other/Comms", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Comms, Grid, Persist, Utility) {
-        function WUWidget(espConnection, id) {
-            this._espConnection = espConnection;
-            this._id = id;
+    require(["src/composite/Dermatology", "src/other/Comms", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Comms, ESP, Grid, Persist, Utility) {
+        function WUWidget(wuResult) {
+            this._metaResult = wuResult;
+            this._id = this._metaResult.name();
             this._columns = [];
             this._data = [];
             this._filteredBy = [];
@@ -81,28 +81,15 @@ function requireApp(require, callback) {
                 context.widgetClass(Widget);
             });
         };
+
         WUWidget.prototype.resolveData = function () {
             var context = this;
-            return context._espConnection.result(context.resultName()).then(function (response) {
-                var columns = [];
-                var data = [];
-                if (response && response.length) {
-                    var colIdx = {};
-                    response.forEach(function (row, rowIdx) {
-                        var rowArr = [];
-                        for (var key in row) {
-                            if (rowIdx === 0) {
-                                colIdx[key] = columns.length;
-                                columns.push(key);
-                            }
-                            rowArr[colIdx[key]] = row[key];
-                        }
-                        data.push(rowArr);
-                    });
-                }
+            this._dataResult = new ESP.WUResult(this._metaResult.getUrl({ pathname: "WsWorkunits/" }), this._metaResult.wuid(), this.resultName());
+            return this._dataResult.query().then(function (result) {
+                result = context._dataResult.flattenResult(result);
                 context
-                    .columns(columns)
-                    .data(data)
+                    .columns(result.columns)
+                    .data(result.data)
                 ;
                 return context;
             });
@@ -110,13 +97,13 @@ function requireApp(require, callback) {
 
         WUWidget.prototype.resolve = function () {
             var context = this;
-            return this._espConnection.result(this._id).then(function (response) {
-                if (response && response.length) {
+            return this._metaResult.query().then(function (result) {
+                if (result && result.length) {
                     context
-                        .classID(response[0].classid)
-                        .properties(response[0].properties)
-                        .filteredBy(response[0].filteredby)
-                        .resultName(response[0].resultname)
+                        .classID(result[0].classid)
+                        .properties(result[0].properties)
+                        .filteredBy(result[0].filteredby)
+                        .resultName(result[0].resultname)
                     ;
                 }
                 var widgetPromise = context.resolveWidget();
@@ -128,12 +115,14 @@ function requireApp(require, callback) {
         };
 
         WUWidget.prototype.refreshData = function (selections) {
+            var filterRequest = {};
             var filterValues = [];
             this.filteredBy().forEach(function (filter) {
                 var selection = selections[filter.source + "__hpcc_visualization"];
                 if (selection) {
                     var columns = this.columns();
-                    filter.mappings.Row.forEach(function (mapping) {
+                    filter.mappings.forEach(function (mapping) {
+                        filterRequest[mapping.value.toLowerCase()] = selection[mapping.key.toLowerCase()];
                         filterValues.push({
                             idx: columns.indexOf(mapping.value.toLowerCase()),
                             value: selection[mapping.key.toLowerCase()]
@@ -141,24 +130,21 @@ function requireApp(require, callback) {
                     });
                 }
             }, this);
-            this.widget()
-                .data(this.data().filter(function (row) {
-                    var exclude = filterValues.some(function (filter) {
-                        if (row[filter.idx] !== filter.value) {
-                            return true;
-                        }
-                        return false;
-                    });
-                    return !exclude;
-                }))
-                .lazyRender()
-            ;
+            var context = this;
+            this._dataResult.query(null, filterRequest).then(function (result) {
+                result = context._dataResult.flattenResult(result);
+                context.widget()
+                    .data(result.data)
+                    .lazyRender()
+                ;
+            });
         }
 
         //  ===================================================================
         function WUDashboard(espUrl) {
             this._espUrl = espUrl;
             this._espConnection = Comms.createESPConnection(this._espUrl);
+            this._espWorkunit = new ESP.Workunit(this._espConnection.getUrl({ pathname: "" }), this._espConnection.wuid());
             this._wuWidgets = [];
             this._wuWidgetMap = {};
             this._wuDashSel = {};
@@ -167,12 +153,12 @@ function requireApp(require, callback) {
         WUDashboard.prototype.submitPersist = function () {
             if (this.grid) {
                 var persistStr = Persist.serialize(this.grid);
-                this._espConnection.appData("HPCC-VizBundle", "persist", persistStr);
+                this._espWorkunit.appData("HPCC-VizBundle", "persist", persistStr);
             }
         };
 
         WUDashboard.prototype.fetchPersist = function () {
-            return this._espConnection.appData("HPCC-VizBundle", "persist").then(function (persistStr) {
+            return this._espWorkunit.appData("HPCC-VizBundle", "persist").then(function (persistStr) {
                 if (persistStr) {
                     return Persist.create(persistStr);
                 }
@@ -182,6 +168,16 @@ function requireApp(require, callback) {
 
         WUDashboard.prototype.fetchWUWidgets = function () {
             var context = this;
+            return this._espWorkunit.results().then(function (results) {
+                var promises = []
+                results.filter(function (result) {
+                    return Utility.endsWith(result.name(), "__hpcc_visualization");
+                }).map(function (result) {
+                    var wuWidget = new WUWidget(result);
+                    promises.push(wuWidget.resolve());
+                });
+                return Promise.all(promises);
+            });
             return this._espConnection.fetchResultNames().then(function (response) {
                 var promises = []
                 for (var key in response) {
