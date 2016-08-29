@@ -48,18 +48,13 @@ function requireApp(require, callback) {
         WUWidget.prototype.resultName = function (_) {
             if (!arguments.length) return this._resultName;
             this._resultName = _;
+            this._dataResult = new ESP.WUResult(this._metaResult.getUrl({ pathname: "WsWorkunits/" }), this._metaResult.wuid(), _);
             return this;
         };
 
         WUWidget.prototype.columns = function (_) {
             if (!arguments.length) return this._columns;
             this._columns = _;
-            return this;
-        };
-
-        WUWidget.prototype.data = function (_) {
-            if (!arguments.length) return this._data;
-            this._data = _;
             return this;
         };
 
@@ -82,19 +77,6 @@ function requireApp(require, callback) {
             });
         };
 
-        WUWidget.prototype.resolveData = function () {
-            var context = this;
-            this._dataResult = new ESP.WUResult(this._metaResult.getUrl({ pathname: "WsWorkunits/" }), this._metaResult.wuid(), this.resultName());
-            return this._dataResult.query().then(function (result) {
-                result = context._dataResult.flattenResult(result);
-                context
-                    .columns(result.columns)
-                    .data(result.data)
-                ;
-                return context;
-            });
-        };
-
         WUWidget.prototype.resolve = function () {
             var context = this;
             return this._metaResult.query().then(function (result) {
@@ -106,9 +88,7 @@ function requireApp(require, callback) {
                         .resultName(result[0].resultname)
                     ;
                 }
-                var widgetPromise = context.resolveWidget();
-                var dataPromise = context.resolveData();
-                return Promise.all([widgetPromise, dataPromise]).then(function (promises) {
+                return context.resolveWidget().then(function () {
                     return context;
                 });
             });
@@ -116,28 +96,35 @@ function requireApp(require, callback) {
 
         WUWidget.prototype.refreshData = function (selections) {
             var filterRequest = {};
-            var filterValues = [];
+            var isFiltered = false;
+            var filterCount = false;
             this.filteredBy().forEach(function (filter) {
                 var selection = selections[filter.source + "__hpcc_visualization"];
                 if (selection) {
-                    var columns = this.columns();
+                    ++filterCount;
                     filter.mappings.forEach(function (mapping) {
                         filterRequest[mapping.value.toLowerCase()] = selection[mapping.key.toLowerCase()];
-                        filterValues.push({
-                            idx: columns.indexOf(mapping.value.toLowerCase()),
-                            value: selection[mapping.key.toLowerCase()]
-                        });
                     });
                 }
+                isFiltered = true;
             }, this);
-            var context = this;
-            this._dataResult.query(null, filterRequest).then(function (result) {
-                result = context._dataResult.flattenResult(result);
-                context.widget()
-                    .data(result.data)
+            if (!isFiltered || filterCount > 0) {
+                var context = this;
+                this._dataResult.query(null, filterRequest).then(function (result) {
+                    result = context._dataResult.flattenResult(result);
+                    context.widget()
+                        .columns(result.columns)
+                        .data(result.data)
+                        .lazyRender()
+                    ;
+                });
+            } else {
+                this.widget()
+                    .columns([])
+                    .data([])
                     .lazyRender()
                 ;
-            });
+            }
         }
 
         //  ===================================================================
@@ -213,8 +200,6 @@ function requireApp(require, callback) {
                         context.grid.setContent(0, colPos, widget);
                     }
                     widget
-                        .columns(wuWidget.columns())
-                        .data(wuWidget.data())
                         .on("click", function (row, col, sel) {
                             context.refreshFilters(this.id(), row, col, sel);
                         });
@@ -229,6 +214,12 @@ function requireApp(require, callback) {
 
                 return context.grid;
             });
+        };
+
+        WUDashboard.prototype.refresh = function () {
+            this._wuWidgets.forEach(function (wuWidget) {
+                wuWidget.refreshData(this._wuDashSel);
+            }, this);
         };
 
         WUDashboard.prototype.refreshFilters = function (id, row, col, sel) {
@@ -276,7 +267,9 @@ function requireApp(require, callback) {
                 this.wuDashboard.createGrid().then(function (grid) {
                     context
                         .widget(grid)
-                        .lazyRender()
+                        .render(function (w) {
+                            context.wuDashboard.refresh();
+                        })
                     ;
                 });
             }
