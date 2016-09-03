@@ -4,7 +4,8 @@
     <title>HPCC:  Visualization</title>
     <link href="./index.css" rel="stylesheet">
 
-    <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
+    <script src="../Visualization/node_modules/requirejs/require.js"></script>
+    <script src="../Visualization/src/loader.js"></script>
     <!--
     <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
     -->
@@ -23,7 +24,7 @@
         switch (window.location.hostname) {
             //  Used for debugging JS
             case "localhost":
-                espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160828-093832/res/index.html";
+                espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160903-085743/res/index.html";
                 doRender(require);
                 break;
             default:

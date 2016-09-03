@@ -1,7 +1,8 @@
 "use strict";
 function requireApp(require, callback) {
-    require(["src/composite/Dermatology", "src/other/Comms", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Comms, ESP, Grid, Persist, Utility) {
-        function WUWidget(wuResult) {
+    require(["src/composite/Dermatology", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, ESP, Grid, Persist, Utility) {
+        function WUWidget(espWorkunit, wuResult) {
+            this._espWorkunit = espWorkunit;
             this._metaResult = wuResult;
             this._id = this._metaResult.name();
             this._columns = [];
@@ -48,7 +49,7 @@ function requireApp(require, callback) {
         WUWidget.prototype.resultName = function (_) {
             if (!arguments.length) return this._resultName;
             this._resultName = _;
-            this._dataResult = new ESP.WUResult(this._metaResult.getUrl({ pathname: "WsWorkunits/" }), this._metaResult.wuid(), _);
+            this._dataResult = this._espWorkunit.result(_);
             return this;
         };
 
@@ -111,7 +112,7 @@ function requireApp(require, callback) {
             if (!isFiltered || filterCount > 0) {
                 var context = this;
                 this._dataResult.query(null, filterRequest).then(function (result) {
-                    result = context._dataResult.flattenResult(result);
+                    result = ESP.flattenResult(result);
                     context.widget()
                         .columns(result.columns)
                         .data(result.data)
@@ -130,8 +131,7 @@ function requireApp(require, callback) {
         //  ===================================================================
         function WUDashboard(espUrl) {
             this._espUrl = espUrl;
-            this._espConnection = Comms.createESPConnection(this._espUrl);
-            this._espWorkunit = new ESP.Workunit(this._espConnection.getUrl({ pathname: "" }), this._espConnection.wuid());
+            this._espWorkunit = ESP.createESPConnection(this._espUrl);
             this._wuWidgets = [];
             this._wuWidgetMap = {};
             this._wuDashSel = {};
@@ -160,19 +160,9 @@ function requireApp(require, callback) {
                 results.filter(function (result) {
                     return Utility.endsWith(result.name(), "__hpcc_visualization");
                 }).map(function (result) {
-                    var wuWidget = new WUWidget(result);
+                    var wuWidget = new WUWidget(context._espWorkunit, result);
                     promises.push(wuWidget.resolve());
                 });
-                return Promise.all(promises);
-            });
-            return this._espConnection.fetchResultNames().then(function (response) {
-                var promises = []
-                for (var key in response) {
-                    if (Utility.endsWith(key, "__hpcc_visualization")) {
-                        var wuWidget = new WUWidget(context._espConnection, key);
-                        promises.push(wuWidget.resolve());
-                    }
-                }
                 return Promise.all(promises);
             });
         };

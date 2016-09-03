@@ -1,11 +1,11 @@
 ﻿EXPORT SampleData := MODULE
 	EXPORT DataBreachDef := RECORD
 		STRING State;
-		STRING CoveredEntityType;
+		STRING20 CoveredEntityType;
 		UNSIGNED IndividualsAffected;
 		STRING SubmissionDate;
-		STRING TypeOfBreach;
-		STRING LocationOfInformation;
+		STRING20 TypeOfBreach;
+		STRING20 LocationOfInformation;
 		STRING SubmissionYear;
 		STRING SubmissionMonth;
 		STRING SubmissionQuarter;
@@ -1265,4 +1265,24 @@
                     {'TX', 'Healthcare Provider', '10604', '2014-08-29T04:00:00.000Z', 'Unauthorized Access/Disclosure', 'Desktop Computer', '2014', '8', '3', 'Fri', '29'},
                     {'IL', 'Healthcare Provider', '632', '2015-05-19T04:00:00.000Z', 'Unauthorized Access/Disclosure', 'Desktop Computer', '2015', '5', '2', 'Tue', '19'},
                     {'PR', 'Healthcare Provider', '2621', '2011-02-22T05:00:00.000Z', 'Other', 'Desktop Computer', '2011', '2', '1', 'Tue', '22'}], DataBreachDef);
+                    
+    EXPORT DataBreachFile := DATASET('~HPCCVisualization::DataBreach', DataBreachDef, FLAT);
+
+    SHARED DataBreachIndexDataset := DATASET('~HPCCVisualization::DataBreach', {DataBreachDef, UNSIGNED8 RecPos{VIRTUAL(fileposition)}}, FLAT);
+    EXPORT DataBreachIndex := INDEX(DataBreachIndexDataset, {TypeOfBreach, CoveredEntityType, LocationOfInformation, RecPos}, '~HPCCVisualization::DataBreachIdx');
+
+    EXPORT createDataBreachFiles() := FUNCTION
+        op := OUTPUT(DataBreach,, '~HPCCVisualization::DataBreach', OVERWRITE);
+        RETURN SEQUENTIAL(op, BUILDINDEX(DataBreachIndex, OVERWRITE));
+    END;		
+    
+    EXPORT createDataBreachRoxieQuery() := FUNCTION
+        varstring typeofbreach_value := '' : stored('TypeOfBreach');
+        varstring coveredentitytype_value := '' : stored('CoveredEntityType');
+        varstring locationofinformation_value := '' : stored('LocationOfInformation');
+        
+        fetched := FETCH(DataBreachFile, DataBreachIndex(TypeOfBreach=typeofbreach_value, CoveredEntityType=coveredentitytype_value, LocationOfInformation=locationofinformation_value), RIGHT.RecPos);
+        op := OUTPUT(CHOOSEN(fetched,2000));
+        RETURN SEQUENTIAL(op);
+    END;
 END;
