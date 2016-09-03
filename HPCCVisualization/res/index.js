@@ -46,10 +46,17 @@ function requireApp(require, callback) {
             return this;
         };
 
+        WUWidget.prototype.dataSource = function (_) {
+            if (!arguments.length) return this._dataSource;
+            this._dataSource = _;
+            //            this._dataResult = this._espWorkunit.result(_);
+            return this;
+        };
+
         WUWidget.prototype.resultName = function (_) {
             if (!arguments.length) return this._resultName;
             this._resultName = _;
-            this._dataResult = this._espWorkunit.result(_);
+//            this._dataResult = this._espWorkunit.result(_);
             return this;
         };
 
@@ -86,6 +93,7 @@ function requireApp(require, callback) {
                         .classID(result[0].classid)
                         .properties(result[0].properties)
                         .filteredBy(result[0].filteredby)
+                        .dataSource(result[0].datasource)
                         .resultName(result[0].resultname)
                     ;
                 }
@@ -111,7 +119,8 @@ function requireApp(require, callback) {
             }, this);
             if (!isFiltered || filterCount > 0) {
                 var context = this;
-                this._dataResult.query(null, filterRequest).then(function (result) {
+                var dataResult = this._espWorkunit.result(this.dataSource(), this.resultName());
+                dataResult.query(null, filterRequest).then(function (result) {
                     result = ESP.flattenResult(result);
                     context.widget()
                         .columns(result.columns)
