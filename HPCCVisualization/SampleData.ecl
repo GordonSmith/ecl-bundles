@@ -1285,4 +1285,36 @@
         op := OUTPUT(CHOOSEN(fetched,2000));
         RETURN SEQUENTIAL(op);
     END;
+    
+    EXPORT __test_sampleData := FUNCTION
+        IMPORT $.SampleData;
+        IMPORT $.Chart2D;
+        
+        //  Sample Data  ---
+        DataBreach := SampleData.DataBreach;
+
+        //  Aggregate by TypeOfBreach ---
+        op1 := OUTPUT(TABLE(DataBreach, {BreachType := TypeOfBreach, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, TypeOfBreach, FEW), NAMED('TypeOfBreach'));
+        myColumnChart := Chart2D.Column('myColumnChart',, 'TypeOfBreach', DATASET([{'xAxisFocus', true}], Chart2D.KeyValueDef));
+
+        //  Aggregate by CoveredEntityType ---
+        op2 := OUTPUT(TABLE(DataBreach, {CoveredEntityType, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));
+        myPieChart := Chart2D.Pie('myPieChart',, 'CoveredEntityType');
+
+        //  Aggregate by LocationOfInformation ---
+        op3 := OUTPUT(TABLE(DataBreach, {LocationOfInformation, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
+        myBarChart := Chart2D.Bar('myBarChart',, 'LocationOfInformation');
+        
+        op4 := OUTPUT(CHOOSEN(DataBreach, ALL), NAMED('DataBreach'));
+        myTableFilter := DATASET([
+            {'myColumnChart', [{'BreachType', 'TypeOfBreach'}]},
+            {'myPieChart', [{'CoveredEntityType', 'CoveredEntityType'}]},
+            {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
+        ], Chart2D.FiltersDef);
+        myTables := SEQUENTIAL( Chart2D.Table('myTable',, 'DataBreach',, myTableFilter),
+                                Chart2D.Table('myTable2','~HPCCVisualization::DataBreach',, , myTableFilter),
+                                Chart2D.Table('myTable3','http://192.168.3.22:8002/WsEcl/submit/query/roxie/databreach.1', 'result_1', , myTableFilter));
+
+        RETURN SEQUENTIAL(op1, op2, op3, op4, myColumnChart, myPieChart, myBarChart, myTables);
+    END;
 END;

@@ -22,13 +22,21 @@
         var app;
         var espUrl = window.location.href;
         switch (window.location.hostname) {
-            //  Used for debugging JS
             case "localhost":
-                espUrl = "http://192.168.3.22:8010/WsWorkunits/res/W20160903-130301/res/index.html";
-                doRender(require);
+                //  GJS Debugging Branch  ---
+                require(["src/other/ESP"], function (ESP) {
+                    var wsWorkuntis = new ESP.WsWorkunits("http://192.168.3.22:8010/");
+                    wsWorkuntis.wuQuery({ PageSize: 1 }).then(function (response) {
+                        if (response.length){
+                            espUrl = "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html";
+                            doRender(require);
+                        }
+                    });
+                });
                 break;
             default:
-                hpccsystems.redirect.github("DERM_WIDGET", "GOrdonSmith", function (require) {
+                //  TODO:  Replace with gold release  ---
+                hpccsystems.redirect.github("DERM_WIDGET", "GordonSmith", function (require) {
                     doRender(require);
                 });
                 break;

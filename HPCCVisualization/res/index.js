@@ -188,15 +188,22 @@ function requireApp(require, callback) {
                 context._wuWidgets = [];
                 context._wuWidgetMap = {};
                 var metas = promises[1];
+                var maxColPos = Math.ceil(Math.sqrt(metas.length));
                 metas.forEach(function (wuWidget, i) {
                     var widget = context.grid.getContent(wuWidget.id());
-                    var colPos = context.grid.content().length;
                     if (!widget) {
+                        var rowPos = 0;
+                        var colPos = 0;
+                        var cellDensity = context.grid.cellDensity();
                         widget = wuWidget.createWidget();
-                        while (context.grid.getContent(0, colPos)) {
+                        while (context.grid.getCell(rowPos * cellDensity, colPos * cellDensity)) {
                             ++colPos
+                            if (colPos >= maxColPos) {
+                                colPos = 0;
+                                ++rowPos;
+                            }
                         }
-                        context.grid.setContent(0, colPos, widget);
+                        context.grid.setContent(rowPos, colPos, widget);
                     }
                     widget
                         .on("click", function (row, col, sel) {
