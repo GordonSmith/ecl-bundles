@@ -49,14 +49,12 @@ function requireApp(require, callback) {
         WUWidget.prototype.dataSource = function (_) {
             if (!arguments.length) return this._dataSource;
             this._dataSource = _;
-            //            this._dataResult = this._espWorkunit.result(_);
             return this;
         };
 
         WUWidget.prototype.resultName = function (_) {
             if (!arguments.length) return this._resultName;
             this._resultName = _;
-//            this._dataResult = this._espWorkunit.result(_);
             return this;
         };
 

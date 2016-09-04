@@ -1,8 +1,8 @@
 ﻿EXPORT SampleData := MODULE
 	EXPORT DataBreachDef := RECORD
-		STRING State;
+		STRING2 State;
 		STRING20 CoveredEntityType;
-		UNSIGNED IndividualsAffected;
+		UNSIGNED INTEGER4 IndividualsAffected;
 		STRING SubmissionDate;
 		STRING20 TypeOfBreach;
 		STRING20 LocationOfInformation;
@@ -1286,27 +1286,30 @@
         RETURN SEQUENTIAL(op);
     END;
     
-    EXPORT __test_sampleData := FUNCTION
-        IMPORT $.SampleData;
+    EXPORT __test := FUNCTION
         IMPORT $.Chart2D;
+        IMPORT $.ChartND;
+        IMPORT $.GeoSpatial;
         
-        //  Sample Data  ---
-        DataBreach := SampleData.DataBreach;
+        //  Aggregate by State ---
+        data_byState := OUTPUT(TABLE(DataBreach, {State, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, State, FEW), NAMED('State'));
+        viz_usStates := GeoSpatial.Choropleth.USStates('usStates',, 'State');
 
         //  Aggregate by TypeOfBreach ---
-        op1 := OUTPUT(TABLE(DataBreach, {BreachType := TypeOfBreach, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, TypeOfBreach, FEW), NAMED('TypeOfBreach'));
-        myColumnChart := Chart2D.Column('myColumnChart',, 'TypeOfBreach', DATASET([{'xAxisFocus', true}], Chart2D.KeyValueDef));
+        op1 := OUTPUT(TABLE(DataBreach, {BreachType := TypeOfBreach, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, TypeOfBreach, FEW), NAMED('TypeOfBreach'));
+        myColumnChart := ChartND.Column('myColumnChart',, 'TypeOfBreach', DATASET([{'xAxisFocus', false}], Chart2D.KeyValueDef));
 
         //  Aggregate by CoveredEntityType ---
-        op2 := OUTPUT(TABLE(DataBreach, {CoveredEntityType, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));
+        op2 := OUTPUT(TABLE(DataBreach, {CoveredEntityType, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));
         myPieChart := Chart2D.Pie('myPieChart',, 'CoveredEntityType');
 
         //  Aggregate by LocationOfInformation ---
-        op3 := OUTPUT(TABLE(DataBreach, {LocationOfInformation, SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
-        myBarChart := Chart2D.Bar('myBarChart',, 'LocationOfInformation');
+        op3 := OUTPUT(TABLE(DataBreach, {LocationOfInformation, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
+        myBarChart := ChartND.Bar('myBarChart',, 'LocationOfInformation');
         
         op4 := OUTPUT(CHOOSEN(DataBreach, ALL), NAMED('DataBreach'));
         myTableFilter := DATASET([
+            {'usStates', [{'State', 'State'}]},
             {'myColumnChart', [{'BreachType', 'TypeOfBreach'}]},
             {'myPieChart', [{'CoveredEntityType', 'CoveredEntityType'}]},
             {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
@@ -1315,6 +1318,10 @@
                                 Chart2D.Table('myTable2','~HPCCVisualization::DataBreach',, , myTableFilter),
                                 Chart2D.Table('myTable3','http://192.168.3.22:8002/WsEcl/submit/query/roxie/databreach.1', 'result_1', , myTableFilter));
 
-        RETURN SEQUENTIAL(op1, op2, op3, op4, myColumnChart, myPieChart, myBarChart, myTables);
+        RETURN SEQUENTIAL(data_byState, viz_usStates, op1, op2, op3, op4, myColumnChart, myPieChart, myBarChart, myTables);
+    END;
+    
+    EXPORT main := FUNCTION
+        RETURN SEQUENTIAL(__test);
     END;
 END;

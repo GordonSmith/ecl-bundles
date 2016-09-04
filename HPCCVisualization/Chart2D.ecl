@@ -39,7 +39,7 @@ EXPORT Chart2D := MODULE(Common)
                         {'Bioligy', 66},
                         {'Physics', 46},
                         {'Math', 98}],
-                        {STRING subject, INTEGER year});
+                        {STRING subject, INTEGER4 year});
         op_data := OUTPUT(ds, NAMED('myData'));
         
         viz_bubble := Bubble('bubble',, 'myData');

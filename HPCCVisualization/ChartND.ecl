@@ -50,7 +50,7 @@ EXPORT ChartND := MODULE(Common)
                         {'Bioligy', 66, 60, 85, 6},
                         {'Physics', 46, 20, 53, 7},
                         {'Math', 98, 30, 23, 13}],
-                        {STRING subject, INTEGER year1, INTEGER year2, INTEGER year3, INTEGER year4});
+                        {STRING subject, INTEGER4 year1, INTEGER4 year2, INTEGER4 year3, INTEGER4 year4});
         op_data := OUTPUT(ds, NAMED('myData'));
 
         viz_area := Area('area',, 'myData');
