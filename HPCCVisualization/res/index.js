@@ -110,7 +110,7 @@ function requireApp(require, callback) {
                 if (selection) {
                     ++filterCount;
                     filter.mappings.forEach(function (mapping) {
-                        filterRequest[mapping.value.toLowerCase()] = selection[mapping.key.toLowerCase()];
+                        filterRequest[mapping.value.toLowerCase()] = selection.row[mapping.key.toLowerCase()];
                     });
                 }
                 isFiltered = true;
@@ -228,7 +228,10 @@ function requireApp(require, callback) {
 
         WUDashboard.prototype.refreshFilters = function (id, row, col, sel) {
             if (sel) {
-                this._wuDashSel[id] = row;
+                this._wuDashSel[id] = {
+                    row: row,
+                    col: col
+                };
             } else {
                 delete this._wuDashSel[id];
             }
