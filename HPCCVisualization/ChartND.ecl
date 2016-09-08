@@ -51,7 +51,7 @@ EXPORT ChartND := MODULE(Common)
                         {'Physics', 46, 20, 53, 7},
                         {'Math', 98, 30, 23, 13}],
                         {STRING subject, INTEGER4 year1, INTEGER4 year2, INTEGER4 year3, INTEGER4 year4});
-        op_data := OUTPUT(ds, NAMED('myData'));
+        data_exams := OUTPUT(ds, NAMED('myData'));
 
         viz_area := Area('area',, 'myData');
         viz_bar := Bar('bar',, 'myData');
@@ -61,7 +61,7 @@ EXPORT ChartND := MODULE(Common)
         viz_scatter := Scatter('scatter',, 'myData');
         viz_step := Step('step',, 'myData');
         
-        RETURN SEQUENTIAL(op_data, viz_area, viz_bar, viz_column, viz_hexBin, viz_line, viz_scatter, viz_step);
+        RETURN SEQUENTIAL(data_exams, viz_area, viz_bar, viz_column, viz_hexBin, viz_line, viz_scatter, viz_step);
     END;
     
     EXPORT main := FUNCTION

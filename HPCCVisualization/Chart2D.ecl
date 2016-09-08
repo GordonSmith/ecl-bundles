@@ -40,14 +40,14 @@ EXPORT Chart2D := MODULE(Common)
                         {'Physics', 46},
                         {'Math', 98}],
                         {STRING subject, INTEGER4 year});
-        op_data := OUTPUT(ds, NAMED('myData'));
+        data_exams := OUTPUT(ds, NAMED('myData'));
         
         viz_bubble := Bubble('bubble',, 'myData');
         viz_pie := Pie('pie',, 'myData');
         viz_summary := Summary('summary',, 'myData');
         viz_wordCloud := WordCloud('wordCloud',, 'myData');
         
-        RETURN SEQUENTIAL(op_data, viz_bubble, viz_pie, viz_summary, viz_wordCloud);
+        RETURN SEQUENTIAL(data_exams, viz_bubble, viz_pie, viz_summary, viz_wordCloud);
     END;
     
     EXPORT main := FUNCTION
