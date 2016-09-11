@@ -1,7 +1,9 @@
 "use strict";
 function requireApp(require, callback) {
-    require(["src/composite/Dermatology", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, ESP, Grid, Persist, Utility) {
+    require(["src/composite/Dermatology", "src/common/Widget", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Widget, ESP, Grid, Persist, Utility) {
         function WUWidget(espWorkunit, wuResult) {
+            Widget.call(this);
+
             this._espWorkunit = espWorkunit;
             this._metaResult = wuResult;
             this._id = this._metaResult.name();
@@ -9,60 +11,17 @@ function requireApp(require, callback) {
             this._data = [];
             this._filteredBy = [];
         }
+        WUWidget.prototype = Object.create(Widget.prototype);
+        WUWidget.prototype.constructor = Widget;
+        WUWidget.prototype._class += " WUWudget";
 
-        WUWidget.prototype.classID = function (_) {
-            if (!arguments.length) return this._classID;
-            this._classID = _;
-            return this;
-        };
-
-        WUWidget.prototype.widgetClass = function (_) {
-            if (!arguments.length) return this._widgetClass;
-            this._widgetClass = _;
-            return this;
-        };
-
-        WUWidget.prototype.widget = function (_) {
-            if (!arguments.length) return this._widget;
-            this._widget = _;
-            return this;
-        };
-
-        WUWidget.prototype.id = function (_) {
-            if (!arguments.length) return this._id;
-            this._id = _;
-            return this;
-        };
-
-        WUWidget.prototype.properties = function (_) {
-            if (!arguments.length) return this._properties;
-            this._properties = _;
-            return this;
-        };
-
-        WUWidget.prototype.filteredBy = function (_) {
-            if (!arguments.length) return this._filteredBy;
-            this._filteredBy = _ || [];
-            return this;
-        };
-
-        WUWidget.prototype.dataSource = function (_) {
-            if (!arguments.length) return this._dataSource;
-            this._dataSource = _;
-            return this;
-        };
-
-        WUWidget.prototype.resultName = function (_) {
-            if (!arguments.length) return this._resultName;
-            this._resultName = _;
-            return this;
-        };
-
-        WUWidget.prototype.columns = function (_) {
-            if (!arguments.length) return this._columns;
-            this._columns = _;
-            return this;
-        };
+        WUWidget.prototype.publish("classID", null, "string", "ESP Url");
+        WUWidget.prototype.publish("widgetClass", null, "object", "Widget Class Declaration");
+        WUWidget.prototype.publish("widget", null, "object", "Widget Instance");
+        WUWidget.prototype.publish("properties", null, "object", "Widget Properties");
+        WUWidget.prototype.publish("filteredBy", null, "object", "Widget Filter Properties");
+        WUWidget.prototype.publish("dataSource", null, "string", "Data Source");
+        WUWidget.prototype.publish("resultName", null, "string", "Result Name");
 
         WUWidget.prototype.createWidget = function () {
             var widget = new this._widgetClass()
@@ -252,11 +211,7 @@ function requireApp(require, callback) {
         App.prototype.constructor = App;
         App.prototype._class += " App";
 
-        App.prototype.espUrl = function (_) {
-            if (!arguments.length) return this._espUrl;
-            this._espUrl = _;
-            return this;
-        };
+        App.prototype.publish("espUrl", null, "string", "ESP Url");
 
         App.prototype.toggleProperties = function () {
             Dermatology.prototype.toggleProperties.apply(this, arguments);

@@ -4,22 +4,22 @@
     <title>HPCC:  Visualization</title>
     <link href="./index.css" rel="stylesheet">
 
-    <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
-    <!--
+    <script src="../Visualization/node_modules/requirejs/require.js"></script>
+    <script src="../Visualization/src/loader.js"></script>
+    <!--  Release
     <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
     -->
-    <!--
+    <!--  Debug
     <script src="../Visualization/node_modules/requirejs/require.js"></script>
     <script src="../Visualization/src/loader.js"></script>
     -->
     <script src="./index.js"></script>
 </head>
-<body onresize="doResize();">
+<body onresize="resize();">
     <div id="placeholder">
     </div>
     <script>
         var app;
-        var espUrl = window.location.href;
         switch (window.location.hostname) {
             case "localhost":
                 //  GJS Debugging Branch  ---
@@ -27,8 +27,7 @@
                     var wsWorkuntis = new ESP.WsWorkunits("http://192.168.3.22:8010/");
                     wsWorkuntis.wuQuery({ PageSize: 1 }).then(function (response) {
                         if (response.length){
-                            espUrl = "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html";
-                            doRender(require);
+                            init(require, "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html");
                         }
                     });
                 });
@@ -36,13 +35,14 @@
             default:
                 //  TODO:  Replace with gold release  ---
                 hpccsystems.redirect.github("DERM_WIDGET", "GordonSmith", function (require) {
-                    doRender(require);
+                    init(require);
                 });
                 break;
         }
 
-        function doRender(requireContext) {
-            requireApp(requireContext, function(App) {
+        function init(requireContext, espUrl) {
+            var espUrl = espUrl || window.location.href;
+            requireApp(requireContext, function (App) {
                 app = new App()
                     .target("placeholder")
                     .espUrl(espUrl)
@@ -51,7 +51,7 @@
             });
         }
 
-        function doResize() {
+        function resize() {
             if (app) {
                 app
                     .resize()
