@@ -24,7 +24,8 @@ function requireApp(require, callback) {
         WUWidget.prototype.publish("resultName", null, "string", "Result Name");
 
         WUWidget.prototype.createWidget = function () {
-            var widget = new this._widgetClass()
+            var WidetClass = this.widgetClass();
+            var widget = new WidetClass()
                 .id(this.id())
             ;
             this.properties().forEach(function (property) {
