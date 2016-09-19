@@ -1,33 +1,48 @@
-﻿IMPORT $.Chart2D;
+﻿#WORKUNIT('name', 'Meetup 003');
+IMPORT $.Chart2D;
 IMPORT $.ChartND;
 IMPORT $.GeoSpatial;
 IMPORT $.SampleData.DataBreach;
 
-//  Aggregate by State ---
-data_byState := OUTPUT(TABLE(DataBreach.RawDataset, {State, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, State, FEW), NAMED('State'));
-viz_usStates := GeoSpatial.Choropleth.USStates('usStates',, 'State');
+//  Aggregate by CoveredEntityType ---
+OUTPUT(TABLE(DataBreach.RawDataset, {CoveredEntityType, INTEGER4 RowCount := COUNT(GROUP)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));
+Chart2D.Pie('myPieChart',, 'CoveredEntityType');
 
 //  Aggregate by TypeOfBreach ---
-data_byTypeOfBreach := OUTPUT(TABLE(DataBreach.RawDataset, {BreachType := TypeOfBreach, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, TypeOfBreach, FEW), NAMED('TypeOfBreach'));
-myColumnChart := ChartND.Column('myColumnChart',, 'TypeOfBreach', DATASET([{'xAxisFocus', false}], Chart2D.KeyValueDef));
+OUTPUT(TABLE(DataBreach.RawDataset, {BreachType := TypeOfBreach, INTEGER4 RowCount := COUNT(GROUP)}, TypeOfBreach, FEW), NAMED('TypeOfBreach'));
+ChartND.Column('myColumnChart',, 'TypeOfBreach');
 
-//  Aggregate by CoveredEntityType ---
-data_byCoveredEntityType := OUTPUT(TABLE(DataBreach.RawDataset, {CoveredEntityType, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));
-myPieChart := Chart2D.Pie('myPieChart',, 'CoveredEntityType');
+//  Aggregate by State ---
+OUTPUT(TABLE(DataBreach.RawDataset, {State, INTEGER4 RowCount := COUNT(GROUP)}, State, FEW), NAMED('State'));
+GeoSpatial.Choropleth.USStates('usStates',, 'State');
 
 //  Aggregate by LocationOfInformation ---
-data_byLocationOfInformation := OUTPUT(TABLE(DataBreach.RawDataset, {LocationOfInformation, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
-myBarChart := ChartND.Bar('myBarChart',, 'LocationOfInformation');
+OUTPUT(TABLE(DataBreach.RawDataset, {LocationOfInformation, INTEGER4 RowCount := COUNT(GROUP)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
+ChartND.Bar('myBarChart',, 'LocationOfInformation');
 
-op4 := OUTPUT(CHOOSEN(DataBreach.RawDataset, ALL), NAMED('DataBreach'));
+//  Filtered Results ---
 myTableFilter := DATASET([
     {'usStates', [{'State', 'State'}]},
     {'myColumnChart', [{'BreachType', 'TypeOfBreach'}]},
     {'myPieChart', [{'CoveredEntityType', 'CoveredEntityType'}]},
     {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
 ], Chart2D.FiltersDef);
-myTables := SEQUENTIAL( Chart2D.Table('myTable',, 'DataBreach',, myTableFilter),
-                        Chart2D.Table('myTable2','~HPCCVisualization::DataBreach',, , myTableFilter),
-                        Chart2D.Table('myTable3','http://192.168.3.22:8002/WsEcl/submit/query/roxie/databreach.1', 'result_1', , myTableFilter));
 
-SEQUENTIAL(data_byState, viz_usStates, data_byTypeOfBreach, data_byCoveredEntityType, data_byLocationOfInformation, op4, myColumnChart, myPieChart, myBarChart, myTables);
+//  Attempt 1
+/*
+Chart2D.Table('myTable','~HPCCVisualization::DataBreach',, , myTableFilter);
+*/
+
+//  Switch to Roxie - remove choropleth  ---
+/*
+ChartND.Line('myLine2','http://192.168.3.22:8002/WsEcl/submit/query/roxie/filtereddatabreach/json', 'DataBreachFiltered', DATASET([
+                                                  {'xAxisType', 'time'}, 
+                                                  {'xAxisTypeTimePattern', '%Y-%m-%d'}, 
+                                                  {'yAxisType', 'pow'}, 
+                                                  {'yAxisTypePowExponent', 0.06},
+                                                  {'interpolate', 'monotone'},
+                                                  {'xAxisFocus', 0}
+                                                  ], ChartND.KeyValueDef), 
+                                                  myTableFilter);
+
+*/

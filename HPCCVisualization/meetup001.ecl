@@ -1,4 +1,5 @@
-﻿IMPORT $.SampleData.DataBreach;
+﻿#WORKUNIT('name', 'Meetup 001');
+IMPORT $.SampleData.DataBreach;
 
 ds := DataBreach.File;
 

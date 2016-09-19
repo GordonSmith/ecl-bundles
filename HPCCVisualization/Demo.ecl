@@ -26,8 +26,8 @@ myTableFilter := DATASET([
     {'myPieChart', [{'CoveredEntityType', 'CoveredEntityType'}]},
     {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
 ], Chart2D.FiltersDef);
-myTables := SEQUENTIAL( Chart2D.Table('myTable',, 'DataBreach',, myTableFilter),
-                        Chart2D.Table('myTable2','~HPCCVisualization::DataBreach',, , myTableFilter),
-                        Chart2D.Table('myTable3','http://192.168.3.22:8002/WsEcl/submit/query/roxie/databreach.1', 'result_1', , myTableFilter));
+myTables := SEQUENTIAL( //Chart2D.Table('myTable',, 'DataBreach',, myTableFilter),
+                        //Chart2D.Table('myTable2','~HPCCVisualization::DataBreach',, , myTableFilter),
+                        Chart2D.Table('myTable3','http://192.168.3.22:8002/WsEcl/submit/query/roxie/databreach', 'DataBreach', , myTableFilter));
 
 SEQUENTIAL(data_byState, viz_usStates, data_byTypeOfBreach, data_byCoveredEntityType, data_byLocationOfInformation, op4, myColumnChart, myPieChart, myBarChart, myTables);

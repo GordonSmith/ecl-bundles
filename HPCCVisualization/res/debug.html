@@ -4,7 +4,8 @@
     <title>HPCC:  Visualization</title>
     <link href="./index.css" rel="stylesheet">
 
-    <script src="http://viz.hpccsystems.com/v1.14.0-rc10/dist-amd/hpcc-viz.js"></script>
+    <script src="../Visualization/node_modules/requirejs/require.js"></script>
+    <script src="../Visualization/src/loader.js"></script>
     <script src="./index.js"></script>
 </head>
 <body onresize="resize();">
@@ -13,9 +14,14 @@
     <script>
         var app;
 
-        //  TODO:  Replace with gold release  ---
-        hpccsystems.redirect.github("DERM_WIDGET", "GordonSmith", function (require) {
-            init(require);
+        //  GJS Debugging Branch  ---
+        require(["src/other/ESP"], function (ESP) {
+            var wsWorkuntis = new ESP.WsWorkunits("http://192.168.3.22:8010/");
+            wsWorkuntis.wuQuery({ PageSize: 1 }).then(function (response) {
+                if (response.length){
+                    init(require, "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html");
+                }
+            });
         });
 
         function init(requireContext, espUrl) {
