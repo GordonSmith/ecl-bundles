@@ -14,7 +14,7 @@ ChartND.Column('myColumnChart',, 'TypeOfBreach');
 
 //  Aggregate by State ---
 OUTPUT(TABLE(DataBreach.RawDataset, {State, INTEGER4 RowCount := COUNT(GROUP)}, State, FEW), NAMED('State'));
-GeoSpatial.Choropleth.USStates('usStates',, 'State');
+//GeoSpatial.Choropleth.USStates('usStates',, 'State');
 
 //  Aggregate by LocationOfInformation ---
 OUTPUT(TABLE(DataBreach.RawDataset, {LocationOfInformation, INTEGER4 RowCount := COUNT(GROUP)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
@@ -22,7 +22,7 @@ ChartND.Bar('myBarChart',, 'LocationOfInformation');
 
 //  Filtered Results ---
 myTableFilter := DATASET([
-    {'usStates', [{'State', 'State'}]},
+  //  {'usStates', [{'State', 'State'}]},
     {'myColumnChart', [{'BreachType', 'TypeOfBreach'}]},
     {'myPieChart', [{'CoveredEntityType', 'CoveredEntityType'}]},
     {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
@@ -34,7 +34,6 @@ Chart2D.Table('myTable','~HPCCVisualization::DataBreach',, , myTableFilter);
 */
 
 //  Switch to Roxie - remove choropleth  ---
-/*
 ChartND.Line('myLine2','http://192.168.3.22:8002/WsEcl/submit/query/roxie/filtereddatabreach/json', 'DataBreachFiltered', DATASET([
                                                   {'xAxisType', 'time'}, 
                                                   {'xAxisTypeTimePattern', '%Y-%m-%d'}, 
@@ -45,4 +44,5 @@ ChartND.Line('myLine2','http://192.168.3.22:8002/WsEcl/submit/query/roxie/filter
                                                   ], ChartND.KeyValueDef), 
                                                   myTableFilter);
 
+/*
 */

@@ -1,10 +1,10 @@
 "use strict";
 function requireApp(require, callback) {
-    require(["src/composite/Dermatology", "src/common/Widget", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility"], function (Dermatology, Widget, ESP, Grid, Persist, Utility) {
-        function WUWidget(espWorkunit, wuResult) {
+    require(["src/composite/Dermatology", "src/common/Widget", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility", "src/composite/MegaChart"], function (Dermatology, Widget, ESP, Grid, Persist, Utility, MegaChart) {
+        ESP.enableCache(true);
+        function WUWidget(wuResult) {
             Widget.call(this);
 
-            this._espWorkunit = espWorkunit;
             this._metaResult = wuResult;
             this._id = this._metaResult.name();
             this._columns = [];
@@ -34,6 +34,9 @@ function requireApp(require, callback) {
                 }
             });
             return widget;
+            return new MegaChart()
+                .chart(widget)
+            ;
         };
 
         WUWidget.prototype.resolveWidget = function () {
@@ -51,7 +54,7 @@ function requireApp(require, callback) {
                         .classID(result[0].classid)
                         .properties(result[0].properties)
                         .filteredBy(result[0].filteredby)
-                        .dataSource(result[0].datasource)
+                        .dataSource(result[0].datasource || context._metaResult.wuid())
                         .resultName(result[0].resultname)
                     ;
                 }
@@ -77,7 +80,7 @@ function requireApp(require, callback) {
             }, this);
             if (!isFiltered || filterCount > 0) {
                 var context = this;
-                var dataResult = this._espWorkunit.result(this.dataSource(), this.resultName());
+                var dataResult = ESP.createResult(this._metaResult.url(), this.dataSource(), this.resultName());
                 dataResult.query(null, filterRequest).then(function (result) {
                     result = ESP.flattenResult(result);
                     context.widget()
@@ -98,7 +101,7 @@ function requireApp(require, callback) {
         //  ===================================================================
         function WUDashboard(espUrl) {
             this._espUrl = espUrl;
-            this._espWorkunit = ESP.createESPConnection(this._espUrl);
+            this._espWorkunit = ESP.createConnection(this._espUrl);
             this._wuWidgets = [];
             this._wuWidgetMap = {};
             this._wuDashSel = {};
@@ -127,7 +130,7 @@ function requireApp(require, callback) {
                 results.filter(function (result) {
                     return Utility.endsWith(result.name(), "__hpcc_visualization");
                 }).map(function (result) {
-                    var wuWidget = new WUWidget(context._espWorkunit, result);
+                    var wuWidget = new WUWidget(result);
                     promises.push(wuWidget.resolve());
                 });
                 return Promise.all(promises);
@@ -152,16 +155,16 @@ function requireApp(require, callback) {
                     if (!widget) {
                         var rowPos = 0;
                         var colPos = 0;
-                        var cellDensity = context.grid.cellDensity();
+                        var cellDensity = 3;
                         widget = wuWidget.createWidget();
-                        while (context.grid.getCell(rowPos * cellDensity, colPos * cellDensity)) {
+                        while (context.grid.getCell(rowPos * cellDensity, colPos * cellDensity) !== null) {
                             ++colPos
                             if (colPos >= maxColPos) {
                                 colPos = 0;
                                 ++rowPos;
                             }
                         }
-                        context.grid.setContent(rowPos, colPos, widget);
+                        context.grid.setContent(rowPos * cellDensity, colPos * cellDensity, widget, null, cellDensity, cellDensity);
                     }
                     widget
                         .on("click", function (row, col, sel) {
@@ -205,32 +208,57 @@ function requireApp(require, callback) {
         };
 
         //  ===================================================================
-        function App() {
+        function BundleDermatology() {
             Dermatology.call(this);
         }
-        App.prototype = Object.create(Dermatology.prototype);
-        App.prototype.constructor = App;
-        App.prototype._class += " App";
+        BundleDermatology.prototype = Object.create(Dermatology.prototype);
+        BundleDermatology.prototype.constructor = BundleDermatology;
+        BundleDermatology.prototype._class += " BundleDermatology";
 
-        App.prototype.publish("espUrl", null, "string", "ESP Url");
+        BundleDermatology.prototype.publish("espUrl", null, "string", "ESP Url");
+        BundleDermatology.prototype.publish("espCache", null, "object", "ESP Cache");
 
-        App.prototype.toggleProperties = function () {
-            Dermatology.prototype.toggleProperties.apply(this, arguments);
+        BundleDermatology.prototype.toggleProperties = function () {
+            var retVal = Dermatology.prototype.toggleProperties.apply(this, arguments);
             if (!this._showProperties) {
                 this.wuDashboard.submitPersist();
             }
+            return retVal;
         };
 
-        App.prototype.update = function () {
+        BundleDermatology.prototype.download = function () {
+            var cache = JSON.stringify(JSON.stringify(ESP.cache()));
+            var context = this;
+            d3.text(this.espUrl().replace(".html", ".css"), function (css) {
+                d3.text(context.espUrl().replace(".html", ".js"), function (js) {
+                    d3.text(context.espUrl(), function (html) {
+                        Utility.downloadBlob("html", html
+                            .replace(".espUrl(espUrl)", ".espUrl(\"" + context.espUrl() + "\")")
+                            .replace(".espCache(null)", ".espCache(" + cache + ")")
+                            .replace("<link href=\"./index.css\" rel=\"stylesheet\">", "<style>" + css + "</style>")
+                            .replace("<script src=\"./index.js\"></script>", "")
+                            .replace("<script>", "<script>" + js)
+                            , "index.html");
+                    });
+                });
+            });
+        };
+
+        BundleDermatology.prototype.update = function () {
             Dermatology.prototype.update.apply(this, arguments);
             if (this._prevEspUrl !== this.espUrl()) {
                 this._prevEspUrl = this.espUrl();
-                this.wuDashboard = new WUDashboard(this.espUrl());
+                if (this.espCache()) {
+                    ESP.cache(JSON.parse(this.espCache()))
+                }
+
                 var context = this;
+                this.wuDashboard = new WUDashboard(this.espUrl());
                 this.wuDashboard.createGrid().then(function (grid) {
                     context
                         .widget(grid)
                         .render(function (w) {
+                            context.download();
                             context.wuDashboard.refresh();
                         })
                     ;
@@ -238,6 +266,6 @@ function requireApp(require, callback) {
             }
         };
 
-        callback(App);
+        callback(BundleDermatology);
     });
 };

@@ -30,7 +30,7 @@ ChartND.Line('myLine2',, 'SubmissionDate', DATASET([
 */
 
 //  Attempt 3:  Roxie query  ---
-/*
+
 varstring typeofbreach_value := '' : stored('TypeOfBreach');
 varstring coveredentitytype_value := '' : stored('CoveredEntityType');
 varstring locationofinformation_value := '' : stored('LocationOfInformation');
@@ -50,4 +50,5 @@ limitedOutput := CHOOSEN(sortByDate, 2000);
 nullOutput := DATASET([], {STRING SubmissionDate, UNSIGNED INTEGER4 MinIndividualsAffected, UNSIGNED INTEGER4 AveIndividualsAffected, UNSIGNED INTEGER4 MaxIndividualsAffected});
 
 OUTPUT(IF (typeofbreach_value = '' AND coveredentitytype_value = '' AND locationofinformation_value = '', nullOutput, limitedOutput), NAMED('DataBreachFiltered'), OVERWRITE);
+/*
 */
