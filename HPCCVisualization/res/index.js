@@ -1,6 +1,6 @@
 "use strict";
 function requireApp(require, callback) {
-    require(["src/composite/Dermatology", "src/common/Widget", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility", "src/composite/MegaChart"], function (Dermatology, Widget, ESP, Grid, Persist, Utility, MegaChart) {
+    require(["src/composite/Dermatology", "src/common/Widget", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility", "src/composite/MegaChart", "src/form/Button"], function (Dermatology, Widget, ESP, Grid, Persist, Utility, MegaChart, Button) {
         ESP.enableCache(true);
         function WUWidget(wuResult) {
             Widget.call(this);
@@ -216,12 +216,13 @@ function requireApp(require, callback) {
         BundleDermatology.prototype._class += " BundleDermatology";
 
         BundleDermatology.prototype.publish("espUrl", null, "string", "ESP Url");
-        BundleDermatology.prototype.publish("espCache", null, "object", "ESP Cache");
+        BundleDermatology.prototype.publish("espCache", null, "string", "ESP Cache");
 
         BundleDermatology.prototype.toggleProperties = function () {
             var retVal = Dermatology.prototype.toggleProperties.apply(this, arguments);
             if (!this._showProperties) {
                 this.wuDashboard.submitPersist();
+                this._downloadButton.disable(true);
             }
             return retVal;
         };
@@ -233,15 +234,31 @@ function requireApp(require, callback) {
                 d3.text(context.espUrl().replace(".html", ".js"), function (js) {
                     d3.text(context.espUrl(), function (html) {
                         Utility.downloadBlob("html", html
+                            .replace(".showToolbar(true)", ".showToolbar(false)")
                             .replace(".espUrl(espUrl)", ".espUrl(\"" + context.espUrl() + "\")")
-                            .replace(".espCache(null)", ".espCache(" + cache + ")")
-                            .replace("<link href=\"./index.css\" rel=\"stylesheet\">", "<style>" + css + "</style>")
-                            .replace("<script src=\"./index.js\"></script>", "")
-                            .replace("<script>", "<script>" + js)
+                            .replace(".espCache(\"\")", ".espCache(" + cache + ")")
+                            .replace("<link href=\"./index.css\" rel=\"stylesheet\">", "<style>\n" + css + "</style>")
+                            .replace("<script src=\"./index.js\">", "<script>")
+                            .replace("<script>", "<script>\n" + js)
                             , "index.html");
                     });
                 });
             });
+        };
+        BundleDermatology.prototype.enter = function () {
+            Dermatology.prototype.enter.apply(this, arguments);
+
+            var context = this;
+            this._downloadButton = new Button()
+                .id(this.id() + "_download")
+                .value("Download")
+                .on("click", function () {
+                    context
+                        .download();
+                    ;
+                })
+            ;
+            this._toolbar.widgets(this._toolbar.widgets().concat([this._downloadButton]));
         };
 
         BundleDermatology.prototype.update = function () {
@@ -258,7 +275,6 @@ function requireApp(require, callback) {
                     context
                         .widget(grid)
                         .render(function (w) {
-                            context.download();
                             context.wuDashboard.refresh();
                         })
                     ;

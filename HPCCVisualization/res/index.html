@@ -23,8 +23,9 @@
             requireApp(requireContext, function (App) {
                 app = new App()
                     .target("placeholder")
+                    .showToolbar(true)
                     .espUrl(espUrl)
-                    .espCache(null)
+                    .espCache("")
                 ;
                 resize();
             });
