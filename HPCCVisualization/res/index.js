@@ -9,7 +9,6 @@ function requireApp(require, callback) {
             this._id = this._metaResult.name();
             this._columns = [];
             this._data = [];
-            this._filteredBy = [];
         }
         WUWidget.prototype = Object.create(Widget.prototype);
         WUWidget.prototype.constructor = Widget;
@@ -34,9 +33,6 @@ function requireApp(require, callback) {
                 }
             });
             return widget;
-            return new MegaChart()
-                .chart(widget)
-            ;
         };
 
         WUWidget.prototype.resolveWidget = function () {
@@ -107,6 +103,10 @@ function requireApp(require, callback) {
             this._wuDashSel = {};
         }
 
+        WUDashboard.prototype.resetPersist = function () {
+            return this._espWorkunit.appData("HPCC-VizBundle", "persist", " ");
+        };
+
         WUDashboard.prototype.submitPersist = function () {
             if (this.grid) {
                 var persistStr = Persist.serialize(this.grid);
@@ -119,6 +119,8 @@ function requireApp(require, callback) {
                 if (persistStr) {
                     return Persist.create(persistStr);
                 }
+                return Promise.resolve(null);
+            }).catch(function (e) {
                 return Promise.resolve(null);
             });
         };
@@ -227,6 +229,16 @@ function requireApp(require, callback) {
             return retVal;
         };
 
+        BundleDermatology.prototype.reset = function () {
+            var context = this;
+            this.wuDashboard.resetPersist().then(function (response) {
+                ESP.cache({});
+                delete context._prevEspUrl;
+                context._downloadButton.disable(false);
+                context.render();
+            });
+        };
+
         BundleDermatology.prototype.download = function () {
             var cache = JSON.stringify(JSON.stringify(ESP.cache()));
             var context = this;
@@ -245,6 +257,7 @@ function requireApp(require, callback) {
                 });
             });
         };
+
         BundleDermatology.prototype.enter = function () {
             Dermatology.prototype.enter.apply(this, arguments);
 
@@ -258,7 +271,16 @@ function requireApp(require, callback) {
                     ;
                 })
             ;
-            this._toolbar.widgets(this._toolbar.widgets().concat([this._downloadButton]));
+            this._resetButton = new Button()
+                .id(this.id() + "_reset")
+                .value("Reset")
+                .on("click", function () {
+                    context
+                        .reset();
+                    ;
+                })
+            ;
+            this._toolbar.widgets([this._resetButton, this._propsButton, this._downloadButton]);
         };
 
         BundleDermatology.prototype.update = function () {

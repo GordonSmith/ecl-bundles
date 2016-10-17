@@ -1,7 +1,8 @@
-﻿IMPORT $.Chart2D;
-IMPORT $.ChartND;
-IMPORT $.GeoSpatial;
-IMPORT $.SampleData.DataBreach;
+﻿#WORKUNIT('name', 'hpcc-viz-SimpleDashbaord');
+IMPORT $.^.Chart2D;
+IMPORT $.^.ChartND;
+IMPORT $.^.GeoSpatial;
+IMPORT $.^.SampleData.DataBreach;
 
 //  Aggregate by State ---
 data_byState := OUTPUT(TABLE(DataBreach.RawDataset, {State, UNSIGNED INTEGER4 SumIndividualsAffected := SUM(GROUP, IndividualsAffected)}, State, FEW), NAMED('State'));

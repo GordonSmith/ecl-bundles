@@ -1,8 +1,8 @@
 ﻿#WORKUNIT('name', 'Meetup 003');
-IMPORT $.Chart2D;
-IMPORT $.ChartND;
-IMPORT $.GeoSpatial;
-IMPORT $.SampleData.DataBreach;
+IMPORT $.^.SampleData.DataBreach;
+IMPORT $.^.Chart2D;
+IMPORT $.^.ChartND;
+IMPORT $.^.GeoSpatial;
 
 //  Aggregate by CoveredEntityType ---
 OUTPUT(TABLE(DataBreach.RawDataset, {CoveredEntityType, INTEGER4 RowCount := COUNT(GROUP)}, CoveredEntityType, FEW), NAMED('CoveredEntityType'));
@@ -20,20 +20,24 @@ OUTPUT(TABLE(DataBreach.RawDataset, {State, INTEGER4 RowCount := COUNT(GROUP)}, 
 OUTPUT(TABLE(DataBreach.RawDataset, {LocationOfInformation, INTEGER4 RowCount := COUNT(GROUP)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
 ChartND.Bar('myBarChart',, 'LocationOfInformation');
 
-//  Filtered Results ---
+/*
+//  Attempt 1
+Chart2D.Table('myTable', '~HPCCVisualization::DataBreach');
+*/
+
 myTableFilter := DATASET([
-  //  {'usStates', [{'State', 'State'}]},
+   // {'usStates', [{'State', 'State'}]},
     {'myColumnChart', [{'BreachType', 'TypeOfBreach'}]},
     {'myPieChart', [{'CoveredEntityType', 'CoveredEntityType'}]},
     {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
 ], Chart2D.FiltersDef);
 
-//  Attempt 1
 /*
-Chart2D.Table('myTable','~HPCCVisualization::DataBreach',, , myTableFilter);
+//  Attempt 2:  Filtered Results ---
+Chart2D.Table('myTable', '~HPCCVisualization::DataBreach',,, myTableFilter);
 */
 
-//  Switch to Roxie - remove choropleth  ---
+//  Attempt 3:  Switch to Roxie - remove choropleth  ---
 ChartND.Line('myLine2','http://192.168.3.22:8002/WsEcl/submit/query/roxie/filtereddatabreach/json', 'DataBreachFiltered', DATASET([
                                                   {'xAxisType', 'time'}, 
                                                   {'xAxisTypeTimePattern', '%Y-%m-%d'}, 
@@ -41,8 +45,7 @@ ChartND.Line('myLine2','http://192.168.3.22:8002/WsEcl/submit/query/roxie/filter
                                                   {'yAxisTypePowExponent', 0.06},
                                                   {'interpolate', 'monotone'},
                                                   {'xAxisFocus', 0}
-                                                  ], ChartND.KeyValueDef), 
-                                                  myTableFilter);
+                                                  ], ChartND.KeyValueDef), myTableFilter);
 
 /*
 */

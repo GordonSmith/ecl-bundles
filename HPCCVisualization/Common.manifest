@@ -1,3 +1,5 @@
 <Manifest>
-    <Resource filename="./res/*" recursive='1'/>
+    <Resource filename="./res/index.html" />
+    <Resource filename="./res/index.css" />
+    <Resource filename="./res/index.js" />
 </Manifest>

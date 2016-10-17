@@ -1290,7 +1290,7 @@
     END;
     
     EXPORT main := FUNCTION
-        //RETURN createFiles();
+        //createFiles();
         RETURN createRoxieQuery();
     END;
 END;

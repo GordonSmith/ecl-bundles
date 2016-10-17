@@ -1,7 +1,6 @@
 ﻿#WORKUNIT('name', 'Meetup 002');
-IMPORT $.ChartND;
-IMPORT $.GeoSpatial;
-IMPORT $.SampleData.DataBreach;
+IMPORT $.^.ChartND;
+IMPORT $.^.SampleData.DataBreach;
 
 //  Aggregate by Date ---
 byDate := TABLE(DataBreach.RawDataset, {
@@ -11,14 +10,15 @@ byDate := TABLE(DataBreach.RawDataset, {
     UNSIGNED INTEGER4 MaxIndividualsAffected := MAX(GROUP, IndividualsAffected)
 }, SubmissionDate, FEW);
 
-//  Attempt 1  ---
-/*
 OUTPUT(CHOOSEN(SORT(byDate, SubmissionDate), 100), NAMED('SubmissionDate'));
+
+/*
+//  Attempt 1  ---
 ChartND.Line('myLine',, 'SubmissionDate');
 */
+/*
 
 //  Attempt 2  ---
-/*
 ChartND.Line('myLine2',, 'SubmissionDate', DATASET([
                                                   {'xAxisType', 'time'}, 
                                                   {'xAxisTypeTimePattern', '%Y-%m-%d'}, 
@@ -29,8 +29,9 @@ ChartND.Line('myLine2',, 'SubmissionDate', DATASET([
                                                   ], ChartND.KeyValueDef));
 */
 
+/*
+*/
 //  Attempt 3:  Roxie query  ---
-
 varstring typeofbreach_value := '' : stored('TypeOfBreach');
 varstring coveredentitytype_value := '' : stored('CoveredEntityType');
 varstring locationofinformation_value := '' : stored('LocationOfInformation');
@@ -50,5 +51,3 @@ limitedOutput := CHOOSEN(sortByDate, 2000);
 nullOutput := DATASET([], {STRING SubmissionDate, UNSIGNED INTEGER4 MinIndividualsAffected, UNSIGNED INTEGER4 AveIndividualsAffected, UNSIGNED INTEGER4 MaxIndividualsAffected});
 
 OUTPUT(IF (typeofbreach_value = '' AND coveredentitytype_value = '' AND locationofinformation_value = '', nullOutput, limitedOutput), NAMED('DataBreachFiltered'), OVERWRITE);
-/*
-*/

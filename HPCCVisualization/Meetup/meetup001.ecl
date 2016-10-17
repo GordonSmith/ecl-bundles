@@ -1,5 +1,5 @@
 ﻿#WORKUNIT('name', 'Meetup 001');
-IMPORT $.SampleData.DataBreach;
+IMPORT $.^.SampleData.DataBreach;
 
 ds := DataBreach.File;
 
