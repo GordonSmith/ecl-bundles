@@ -42,3 +42,4 @@ report :=
     calcCardinality(ds.SubmissionDay, 'SubmissionDay')
 ;
 OUTPUT(SORT(report, rowCount));
+

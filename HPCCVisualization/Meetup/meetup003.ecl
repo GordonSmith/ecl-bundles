@@ -20,8 +20,8 @@ OUTPUT(TABLE(DataBreach.RawDataset, {State, INTEGER4 RowCount := COUNT(GROUP)}, 
 OUTPUT(TABLE(DataBreach.RawDataset, {LocationOfInformation, INTEGER4 RowCount := COUNT(GROUP)}, LocationOfInformation, FEW), NAMED('LocationOfInformation'));
 ChartND.Bar('myBarChart',, 'LocationOfInformation');
 
-/*
 //  Attempt 1
+/*
 Chart2D.Table('myTable', '~HPCCVisualization::DataBreach');
 */
 
@@ -32,8 +32,8 @@ myTableFilter := DATASET([
     {'myBarChart', [{'LocationOfInformation', 'LocationOfInformation'}]}
 ], Chart2D.FiltersDef);
 
-/*
 //  Attempt 2:  Filtered Results ---
+/*
 Chart2D.Table('myTable', '~HPCCVisualization::DataBreach',,, myTableFilter);
 */
 
@@ -46,6 +46,5 @@ ChartND.Line('myLine2','http://192.168.3.22:8002/WsEcl/submit/query/roxie/filter
                                                   {'interpolate', 'monotone'},
                                                   {'xAxisFocus', 0}
                                                   ], ChartND.KeyValueDef), myTableFilter);
-
 /*
 */

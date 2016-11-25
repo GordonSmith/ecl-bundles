@@ -1,4 +1,5 @@
 ﻿IMPORT $.Common;
+
 EXPORT Chart2D := MODULE(Common)
     IMPORT Std;
 

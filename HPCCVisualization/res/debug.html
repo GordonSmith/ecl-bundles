@@ -5,7 +5,7 @@
     <link href="./index.css" rel="stylesheet">
 
     <!--script src="../Visualization/node_modules/requirejs/require.js"></script>-->
-    <script src="http://localhost:10424/dist-amd/hpcc-viz.js"></script>
+    <script src="http://192.168.3.22:8010/esp/files/Visualization/dist-amd/hpcc-viz.js"></script>
     <script src="./index.js"></script>
 </head>
 <body onresize="resize();">
@@ -15,11 +15,11 @@
         var app;
 
         //  GJS Debugging Branch  ---
-        require(["src/other/ESP"], function (ESP) {
+        hpccsystems.require(["src/other/ESP"], function (ESP) {
             var wsWorkuntis = new ESP.WsWorkunits("http://192.168.3.22:8010/");
             wsWorkuntis.wuQuery({ PageSize: 1 }).then(function (response) {
                 if (response.length){
-                    init(require, "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html");
+                    init(hpccsystems.require, "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html");
                 }
             });
         });
