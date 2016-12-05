@@ -1,6 +1,8 @@
 "use strict";
 function requireApp(require, callback) {
     require(["src/composite/Dermatology", "src/common/Widget", "src/other/ESP", "src/layout/Grid", "src/other/Persist", "src/common/Utility", "src/composite/MegaChart", "src/form/Button"], function (Dermatology, Widget, ESP, Grid, Persist, Utility, MegaChart, Button) {
+        Dermatology = Dermatology.Dermatology || Dermatology;
+        Widget = Widget.Widget || Widget;
         ESP.enableCache(true);
         function WUWidget(wuResult) {
             Widget.call(this);
@@ -17,8 +19,9 @@ function requireApp(require, callback) {
         WUWidget.prototype.publish("classID", null, "string", "ESP Url");
         WUWidget.prototype.publish("widgetClass", null, "object", "Widget Class Declaration");
         WUWidget.prototype.publish("widget", null, "object", "Widget Instance");
-        WUWidget.prototype.publish("properties", null, "object", "Widget Properties");
+        WUWidget.prototype.publish("mappings", null, "object", "Widget Properties");
         WUWidget.prototype.publish("filteredBy", null, "object", "Widget Filter Properties");
+        WUWidget.prototype.publish("properties", null, "object", "Widget Properties");
         WUWidget.prototype.publish("dataSource", null, "string", "Data Source");
         WUWidget.prototype.publish("resultName", null, "string", "Result Name");
 
@@ -48,8 +51,9 @@ function requireApp(require, callback) {
                 if (result && result.length) {
                     context
                         .classID(result[0].classid)
-                        .properties(result[0].properties)
+                        .mappings(result[0].mappings)
                         .filteredBy(result[0].filteredby)
+                        .properties(result[0].properties)
                         .dataSource(result[0].datasource || context._metaResult.wuid())
                         .resultName(result[0].resultname)
                     ;
@@ -78,7 +82,7 @@ function requireApp(require, callback) {
                 var context = this;
                 var dataResult = ESP.createResult(this._metaResult.url(), this.dataSource(), this.resultName());
                 dataResult.query(null, filterRequest).then(function (result) {
-                    result = ESP.flattenResult(result);
+                    result = ESP.flattenResult(result, context.mappings());
                     context.widget()
                         .columns(result.columns)
                         .data(result.data)
