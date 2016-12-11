@@ -156,6 +156,13 @@ function requireApp(require, callback) {
                 context._wuWidgetMap = {};
                 var metas = promises[1];
                 var maxColPos = Math.ceil(Math.sqrt(metas.length));
+                var maxRowPos = Math.ceil(metas.length / maxColPos);
+                var snappingColumns = (maxColPos + 1) * 3;
+                var snappingRows = (maxRowPos + 1) * 3;
+                context.grid
+                    .snappingColumns(snappingColumns)
+                    .snappingRows(snappingRows)
+                ;
                 metas.forEach(function (wuWidget, i) {
                     var widget = context.grid.getContent(wuWidget.id());
                     if (!widget) {
