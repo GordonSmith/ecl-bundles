@@ -1,27 +1,34 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>HPCC: Visualization</title>
+    <title>HPCC:  Visualization</title>
     <link href="./index.css" rel="stylesheet">
 
-    <!--  Uncomment once CORS support is fixed
-    <script src="https://viz.hpccsystems.com/v1.16.0-beta1/dist-amd/hpcc-viz.js"></script>
+    <script src="/viz/dist-amd/hpcc-viz.js"></script>
+    <!--
+    <script src="/viz/node_modules/requirejs/require.js"></script>
+    <script src="/viz/src/loader.js"></script>
     -->
-    <script src="http://cdn.rawgit.com/hpcc-systems/Visualization/b1.16.0-beta1/dist-amd/hpcc-viz.js"></script>
+    <!--
+    <script src="/viz/dist-amd/hpcc-viz.js"></script>
+    -->
     <script src="./index.js"></script>
 </head>
-
 <body onresize="resize();">
     <div id="placeholder">
     </div>
     <script>
         var app;
 
-        //  TODO:  Replace with gold release  ---
-        //hpccsystems.redirect.github("VIZ_BUNDLE_TMP", "GOrdonSmith", function (require) {
-            init(require);
-        //});
+        //  GJS Debugging Branch  ---
+        hpccsystems.require(["src/other/ESP"], function (ESP) {
+            var wsWorkuntis = new ESP.WsWorkunits("http://192.168.3.22:8010/");
+            wsWorkuntis.wuQuery({ PageSize: 1 }).then(function (response) {
+                if (response.length){
+                    init(hpccsystems.require, "http://192.168.3.22:8010/WsWorkunits/res/"+ response[0].Wuid + "/res/index.html");
+                }
+            });
+        });
 
         function init(requireContext, espUrl) {
             var espUrl = espUrl || window.location.href;
@@ -46,5 +53,4 @@
         };
     </script>
 </body>
-
 </html>

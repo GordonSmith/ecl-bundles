@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>HPCC: Visualization</title>
+    <link href="./index.css" rel="stylesheet">
+
+    <!--  Uncomment once CORS support is fixed
+    <script src="https://viz.hpccsystems.com/v1.16.0-beta1/dist-amd/hpcc-viz.js"></script>
+    -->
+    <script src="http://cdn.rawgit.com/hpcc-systems/Visualization/b1.16.0-beta1/dist-amd/hpcc-viz.js"></script>
+    <script src="./index.js"></script>
+</head>
+
+<body onresize="resize();">
+    <div id="placeholder">
+    </div>
+    <script>
+        var app;
+
+        //  TODO:  Replace with gold release  ---
+        hpccsystems.redirect.github("GRID_ISSUES", "GordonSmith", function (require) {
+            init(require);
+        });
+
+        function init(requireContext, espUrl) {
+            var espUrl = espUrl || window.location.href;
+            requireApp(requireContext, function (App) {
+                app = new App()
+                    .target("placeholder")
+                    .showToolbar(true)
+                    .espUrl(espUrl)
+                    .espCache("")
+                ;
+                resize();
+            });
+        }
+
+        function resize() {
+            if (app) {
+                app
+                    .resize()
+                    .lazyRender()
+                ;
+            }
+        };
+    </script>
+</body>
+
+</html>
